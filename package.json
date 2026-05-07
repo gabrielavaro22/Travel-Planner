@@ -1,0 +1,14 @@
+{
+  "name": "ai-travel-planner",
+  "version": "1.0.0",
+  "description": "Aplicatie web AI Travel Planner cu HTML, CSS, JavaScript si Vercel API.",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "vercel:dev": "npx vercel dev"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
