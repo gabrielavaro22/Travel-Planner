@@ -3,10 +3,10 @@ const fs = require("fs");
 const path = require("path");
 
 const PORT = Number(process.env.PORT) || 3000;
-const PUBLIC_DIR = __dirname;
+const PUBLIC_DIR = path.join(__dirname, "..");
 
 function loadEnvFile() {
-  const envPath = path.join(__dirname, ".env");
+  const envPath = path.join(PUBLIC_DIR, ".env");
 
   if (!fs.existsSync(envPath)) {
     return;
@@ -32,7 +32,7 @@ function loadEnvFile() {
 
 loadEnvFile();
 
-const generateTrip = require("./api/generate-trip");
+const generateTrip = require("../api/generate-trip");
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
