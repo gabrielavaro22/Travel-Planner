@@ -71,45 +71,51 @@ function getDestinationData(destination) {
   return Object.values(destinations).find((entry) => normalizedDestination.includes(normalizeText(entry.name)));
 }
 
-function uniqueItems(items) {
-  return [...new Set(items.filter(Boolean))];
-}
-
 function pickItems(items, count, offset = 0) {
   if (!items.length) return [];
 
   return Array.from({ length: Math.min(count, items.length) }, (_, index) => items[(index + offset) % items.length]);
 }
 
+function getPreferenceTags(payload) {
+  const tags = new Set(payload.preferences);
+  const vacationTypeTags = {
+    relaxare: ["relaxare", "natura"],
+    aventura: ["aventura", "natura"],
+    cultural: ["cultural", "muzee"],
+    romantic: ["romantic", "relaxare"],
+    familie: ["familie", "natura"],
+    "city break": ["cultural", "gastronomie"],
+    lux: ["lux", "shopping"],
+    "buget redus": ["buget redus", "gratuit"]
+  };
+
+  for (const tag of vacationTypeTags[payload.vacationType] || []) {
+    tags.add(tag);
+  }
+
+  return [...tags];
+}
+
+function scoreLocation(location, preferenceTags) {
+  const tagScore = location.tags.reduce((score, tag) => score + (preferenceTags.includes(tag) ? 8 : 0), 0);
+  const categoryScore = preferenceTags.includes(normalizeText(location.category)) ? 4 : 0;
+  return location.priority + tagScore + categoryScore;
+}
+
 function getRecommendedLocations(payload, destinationData) {
   if (!destinationData) return [];
 
-  const recommendations = [
-    ...pickItems(destinationData.attractions || [], 4),
-    ...pickItems(destinationData.free || [], 2)
-  ];
+  const preferenceTags = getPreferenceTags(payload);
 
-  if (payload.preferences.includes("muzee") || payload.vacationType === "cultural") {
-    recommendations.push(...pickItems(destinationData.museums || [], 3));
-  }
-
-  if (payload.preferences.includes("natura") || payload.preferences.includes("plaja") || payload.vacationType === "aventura") {
-    recommendations.push(...pickItems(destinationData.nature || [], 3));
-  }
-
-  if (payload.preferences.includes("gastronomie")) {
-    recommendations.push(...pickItems(destinationData.food || [], 3));
-  }
-
-  if (payload.preferences.includes("shopping") || payload.vacationType === "lux") {
-    recommendations.push(...pickItems(destinationData.shopping || [], 2));
-  }
-
-  if (payload.preferences.includes("viata de noapte")) {
-    recommendations.push(...pickItems(destinationData.nightlife || [], 2));
-  }
-
-  return uniqueItems(recommendations).slice(0, 12);
+  return destinationData.locations
+    .map((location) => ({
+      ...location,
+      score: scoreLocation(location, preferenceTags),
+      mapUrl: createMapUrl(destinationData.name, location.name)
+    }))
+    .sort((a, b) => b.score - a.score || b.priority - a.priority)
+    .slice(0, Math.min(14, destinationData.locations.length));
 }
 
 function createMapUrl(destination, location) {
@@ -122,7 +128,21 @@ function pickByPreference(payload, options) {
   return match || options[0];
 }
 
-function buildLocalDay(payload, dayNumber, destinationData, recommendedLocations) {
+function categoryLabel(location) {
+  return `${location.name} (${location.category})`;
+}
+
+function splitLocationsByDay(locations, days) {
+  const queue = [...locations];
+
+  return Array.from({ length: days }, () => ({
+    morning: queue.shift(),
+    afternoon: queue.shift(),
+    evening: queue.shift()
+  }));
+}
+
+function buildLocalDay(payload, dayNumber, destinationData, dayPlan) {
   const themes = [
     {
       keywords: ["cultural", "muzee", "istorie", "arta"],
@@ -157,8 +177,9 @@ function buildLocalDay(payload, dayNumber, destinationData, recommendedLocations
   const selectedTheme = pickByPreference(payload, themes);
   const isFirstDay = dayNumber === 1;
   const isLastDay = dayNumber === payload.days;
-  const dayLocations = pickItems(recommendedLocations, 3, (dayNumber - 1) * 2);
-  const locationText = dayLocations.length ? ` Include in traseu: ${dayLocations.join(", ")}.` : "";
+  const morningStop = dayPlan?.morning ? ` Recomandare: ${categoryLabel(dayPlan.morning)}.` : "";
+  const afternoonStop = dayPlan?.afternoon ? ` Include in traseu: ${categoryLabel(dayPlan.afternoon)}.` : "";
+  const eveningStop = dayPlan?.evening ? ` Oprire potrivita: ${categoryLabel(dayPlan.evening)}.` : "";
 
   return {
     day: dayNumber,
@@ -168,20 +189,21 @@ function buildLocalDay(payload, dayNumber, destinationData, recommendedLocations
         ? "Ultimele opriri si suveniruri"
         : selectedTheme.title,
     morning: isFirstDay
-      ? `Ajungi in ${destinationData?.name || payload.destination}, te cazezi daca este posibil si faci o prima plimbare de orientare in zona centrala.${locationText}`
-      : `${selectedTheme.morning}${locationText}`,
+      ? `Ajungi in ${destinationData?.name || payload.destination}, te cazezi daca este posibil si faci o prima plimbare de orientare in zona centrala.${morningStop}`
+      : `${selectedTheme.morning}${morningStop}`,
     afternoon: isLastDay
-      ? "Pastreaza dupa-amiaza pentru suveniruri, o masa relaxata si obiective ramase aproape de cazare."
-      : selectedTheme.afternoon,
+      ? `Pastreaza dupa-amiaza pentru suveniruri, o masa relaxata si obiective ramase aproape de cazare.${afternoonStop}`
+      : `${selectedTheme.afternoon}${afternoonStop}`,
     evening: isFirstDay
-      ? "Alege o cina simpla aproape de cazare si stabileste traseul pentru zilele urmatoare."
-      : selectedTheme.evening
+      ? `Alege o cina simpla aproape de cazare si stabileste traseul pentru zilele urmatoare.${eveningStop}`
+      : `${selectedTheme.evening}${eveningStop}`
   };
 }
 
 function generateLocalTrip(payload) {
   const destinationData = getDestinationData(payload.destination);
   const recommendedLocations = getRecommendedLocations(payload, destinationData);
+  const dayPlans = splitLocationsByDay(recommendedLocations, payload.days);
   const preferenceText = payload.preferences.length
     ? payload.preferences.join(", ")
     : "un ritm echilibrat, cu obiective populare si pauze suficiente";
@@ -190,15 +212,12 @@ function generateLocalTrip(payload) {
     source: "local",
     title: `${payload.days} zile in ${destinationData?.name || payload.destination}`,
     summary: destinationData
-      ? `Plan gratuit generat local pentru ${destinationData.name}, cu recomandari reale precum ${recommendedLocations.slice(0, 4).join(", ")}. Vacanta este de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}.`
+      ? `Plan gratuit generat local pentru ${destinationData.name}, cu recomandari prioritizate dupa preferinte. Vacanta este de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}.`
       : `Plan gratuit generat local pentru o vacanta de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}. Pentru aceasta destinatie folosim recomandari generale.`,
     days: Array.from({ length: payload.days }, (_, index) =>
-      buildLocalDay(payload, index + 1, destinationData, recommendedLocations)
+      buildLocalDay(payload, index + 1, destinationData, dayPlans[index])
     ),
-    recommendedLocations: recommendedLocations.map((location) => ({
-      name: location,
-      mapUrl: createMapUrl(destinationData?.name || payload.destination, location)
-    })),
+    recommendedLocations,
     estimatedBudget: `Pentru bugetul de ${payload.budget}, recomand cazare simpla sau medie, transport public unde este disponibil, mese mixte intre localuri accesibile si cateva experiente speciale. Pastreaza aproximativ 10-15% din buget pentru cheltuieli neprevazute.`,
     tips: [
       "Verifica programul obiectivelor inainte de plecare, deoarece orele pot varia in functie de sezon.",
@@ -253,6 +272,7 @@ function renderTrip(plan) {
       (location) => `
         <a class="location-card" href="${escapeHtml(location.mapUrl)}" target="_blank" rel="noreferrer">
           <span>${escapeHtml(location.name)}</span>
+          <small>${escapeHtml(location.category)} - scor ${escapeHtml(location.score)}</small>
           <small>Vezi pe harta</small>
         </a>
       `
