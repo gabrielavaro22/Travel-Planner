@@ -1,6 +1,6 @@
 # AI Travel Planner
 
-Aplicatie web in HTML, CSS si JavaScript care genereaza itinerarii de vacanta in limba romana. Aplicatia functioneaza gratuit cu un generator local si poate folosi optional OpenAI API printr-o functie server-side Vercel.
+Aplicatie web statica in HTML, CSS si JavaScript care genereaza itinerarii de vacanta in limba romana. Aplicatia functioneaza gratuit cu un generator local, direct in browser.
 
 ## Functionalitati
 
@@ -9,7 +9,6 @@ Aplicatie web in HTML, CSS si JavaScript care genereaza itinerarii de vacanta in
 - Estimare de buget si sfaturi utile.
 - Istoric salvat in browser cu `localStorage`.
 - Mod gratuit fara cheie API, prin generator local.
-- OpenAI API optional, fara expunerea cheii in frontend.
 
 ## Rulare locala
 
@@ -31,17 +30,7 @@ npm run dev
 http://localhost:3000
 ```
 
-Aplicatia functioneaza gratuit si fara `.env`. Daca vrei sa folosesti OpenAI API real mai tarziu, creeaza fisierul `.env` pornind de la `.env.example`:
-
-```powershell
-copy .env.example .env
-```
-
-si adauga cheia:
-
-```env
-OPENAI_API_KEY=sk-...
-```
+Aplicatia functioneaza gratuit si nu are nevoie de `.env` sau cheie API.
 
 Optional, pentru a testa exact mediul Vercel:
 
@@ -53,24 +42,4 @@ npm run vercel:dev
 
 1. Incarca proiectul pe GitHub.
 2. Creeaza un proiect nou in Vercel si conecteaza repository-ul.
-3. Optional, adauga variabila de mediu `OPENAI_API_KEY` in setarile proiectului Vercel daca vrei generare OpenAI reala.
-4. Ruleaza deploy-ul.
-
-## Endpoint API
-
-`POST /api/generate-trip`
-
-Body:
-
-```json
-{
-  "destination": "Barcelona",
-  "days": 5,
-  "budget": "800 EUR",
-  "vacationType": "city break",
-  "preferences": ["muzee", "gastronomie"],
-  "extraDetails": "Vreau sa folosesc transport public."
-}
-```
-
-Raspunsul contine titlu, rezumat, zilele itinerariului, buget estimat si sfaturi. Daca nu exista `OPENAI_API_KEY`, endpoint-ul foloseste automat generatorul local gratuit.
+3. Ruleaza deploy-ul.

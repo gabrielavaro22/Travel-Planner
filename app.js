@@ -50,6 +50,88 @@ function validateTripRequest(payload) {
   return "";
 }
 
+function pickByPreference(payload, options) {
+  const joinedPreferences = `${payload.vacationType} ${payload.preferences.join(" ")} ${payload.extraDetails}`.toLowerCase();
+  const match = options.find((option) => option.keywords.some((keyword) => joinedPreferences.includes(keyword)));
+  return match || options[0];
+}
+
+function buildLocalDay(payload, dayNumber) {
+  const themes = [
+    {
+      keywords: ["cultural", "muzee", "istorie", "arta"],
+      title: "Descoperiri culturale",
+      morning: `Incepe ziua cu centrul istoric din ${payload.destination}, observand cladirile reprezentative si oprindu-te la un muzeu sau monument important.`,
+      afternoon: "Alege o zona pietonala pentru pranz si continua cu o galerie, o piata locala sau un tur scurt al principalelor obiective.",
+      evening: "Incheie cu o plimbare relaxata intr-un cartier cunoscut si o cina cu preparate locale."
+    },
+    {
+      keywords: ["natura", "aventura", "drumetie", "plaja"],
+      title: "Natura si miscare",
+      morning: `Porneste catre o zona verde, parc, plaja sau punct panoramic din apropiere de ${payload.destination}.`,
+      afternoon: "Pastreaza dupa-amiaza pentru o activitate usoara in aer liber si un pranz simplu intr-o zona accesibila.",
+      evening: "Alege o seara linistita, cu apus, promenada sau o terasa potrivita bugetului."
+    },
+    {
+      keywords: ["gastronomie", "mancare", "restaurant", "culinar"],
+      title: "Gusturi locale",
+      morning: `Viziteaza o piata locala sau o zona cu cafenele din ${payload.destination}, ideala pentru mic dejun si observarea atmosferei orasului.`,
+      afternoon: "Rezerva timp pentru un pranz traditional si pentru cateva opriri la magazine sau locuri recomandate de localnici.",
+      evening: "Incheie ziua cu o cina specifica destinatiei, alegand un restaurant cu recenzii bune si preturi potrivite bugetului."
+    },
+    {
+      keywords: ["shopping", "lux", "romantic", "relaxare"],
+      title: "Relaxare si experiente placute",
+      morning: `Ia ziua mai lejer, cu mic dejun tarziu si o plimbare printr-o zona frumoasa din ${payload.destination}.`,
+      afternoon: "Adauga timp pentru shopping, cafenele, fotografii si pauze dese, fara program prea incarcat.",
+      evening: "Alege o activitate memorabila: cina cu priveliste, spectacol, promenada sau un loc potrivit pentru fotografii."
+    }
+  ];
+
+  const selectedTheme = pickByPreference(payload, themes);
+  const isFirstDay = dayNumber === 1;
+  const isLastDay = dayNumber === payload.days;
+
+  return {
+    day: dayNumber,
+    title: isFirstDay
+      ? `Sosire si prima impresie in ${payload.destination}`
+      : isLastDay
+        ? "Ultimele opriri si suveniruri"
+        : selectedTheme.title,
+    morning: isFirstDay
+      ? `Ajungi in ${payload.destination}, te cazezi daca este posibil si faci o prima plimbare de orientare in zona centrala.`
+      : selectedTheme.morning,
+    afternoon: isLastDay
+      ? "Pastreaza dupa-amiaza pentru suveniruri, o masa relaxata si obiective ramase aproape de cazare."
+      : selectedTheme.afternoon,
+    evening: isFirstDay
+      ? "Alege o cina simpla aproape de cazare si stabileste traseul pentru zilele urmatoare."
+      : selectedTheme.evening
+  };
+}
+
+function generateLocalTrip(payload) {
+  const preferenceText = payload.preferences.length
+    ? payload.preferences.join(", ")
+    : "un ritm echilibrat, cu obiective populare si pauze suficiente";
+
+  return {
+    source: "local",
+    title: `${payload.days} zile in ${payload.destination}`,
+    summary: `Plan gratuit generat local pentru o vacanta de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}.`,
+    days: Array.from({ length: payload.days }, (_, index) => buildLocalDay(payload, index + 1)),
+    estimatedBudget: `Pentru bugetul de ${payload.budget}, recomand cazare simpla sau medie, transport public unde este disponibil, mese mixte intre localuri accesibile si cateva experiente speciale. Pastreaza aproximativ 10-15% din buget pentru cheltuieli neprevazute.`,
+    tips: [
+      "Verifica programul obiectivelor inainte de plecare, deoarece orele pot varia in functie de sezon.",
+      "Cumpara bilete online pentru atractiile populare ca sa eviti cozile.",
+      "Foloseste transportul public sau mersul pe jos pentru a controla costurile.",
+      "Pastreaza o copie digitala a documentelor si rezervarilor.",
+      "Lasa cel putin o activitate flexibila pe zi pentru vreme, oboseala sau descoperiri spontane."
+    ]
+  };
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -150,22 +232,8 @@ function renderHistory() {
     .join("");
 }
 
-async function generateTrip(payload) {
-  const response = await fetch("/api/generate-trip", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.error || "Nu am putut genera itinerariul.");
-  }
-
-  return data;
+function generateTrip(payload) {
+  return generateLocalTrip(payload);
 }
 
 form.addEventListener("submit", async (event) => {
