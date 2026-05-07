@@ -88,10 +88,15 @@ function renderTrip(plan) {
     .join("");
 
   const tips = plan.tips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("");
+  const sourceLabel =
+    plan.source === "local"
+      ? '<span class="source-badge">Generat local gratuit</span>'
+      : '<span class="source-badge">Generat cu OpenAI</span>';
 
   result.className = "result-content";
   result.innerHTML = `
     <div class="trip-header">
+      ${sourceLabel}
       <h3>${escapeHtml(plan.title)}</h3>
       <p>${escapeHtml(plan.summary)}</p>
     </div>
@@ -134,7 +139,7 @@ function renderHistory() {
       (item) => `
         <article class="history-item">
           <h3>${escapeHtml(item.plan.title)}</h3>
-          <p>${escapeHtml(item.request.destination)} • ${escapeHtml(item.request.days)} zile • ${escapeHtml(item.request.budget)}</p>
+          <p>${escapeHtml(item.request.destination)} - ${escapeHtml(item.request.days)} zile - ${escapeHtml(item.request.budget)}</p>
           <div class="history-actions">
             <button class="small-button" type="button" data-action="open" data-id="${item.id}">Deschide</button>
             <button class="small-button" type="button" data-action="delete" data-id="${item.id}">Sterge</button>

@@ -321,6 +321,17 @@ textarea:focus {
   color: var(--muted);
 }
 
+.source-badge {
+  display: inline-flex;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  padding: 6px 9px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .budget-box,
 .tips-box,
 .day-card {
