@@ -50,13 +50,79 @@ function validateTripRequest(payload) {
   return "";
 }
 
+function normalizeText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getDestinationData(destination) {
+  const destinations = window.TRAVEL_DESTINATIONS || {};
+  const normalizedDestination = normalizeText(destination);
+  const exactKey = Object.keys(destinations).find((key) => normalizeText(key) === normalizedDestination);
+
+  if (exactKey) {
+    return destinations[exactKey];
+  }
+
+  return Object.values(destinations).find((entry) => normalizedDestination.includes(normalizeText(entry.name)));
+}
+
+function uniqueItems(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function pickItems(items, count, offset = 0) {
+  if (!items.length) return [];
+
+  return Array.from({ length: Math.min(count, items.length) }, (_, index) => items[(index + offset) % items.length]);
+}
+
+function getRecommendedLocations(payload, destinationData) {
+  if (!destinationData) return [];
+
+  const recommendations = [
+    ...pickItems(destinationData.attractions || [], 4),
+    ...pickItems(destinationData.free || [], 2)
+  ];
+
+  if (payload.preferences.includes("muzee") || payload.vacationType === "cultural") {
+    recommendations.push(...pickItems(destinationData.museums || [], 3));
+  }
+
+  if (payload.preferences.includes("natura") || payload.preferences.includes("plaja") || payload.vacationType === "aventura") {
+    recommendations.push(...pickItems(destinationData.nature || [], 3));
+  }
+
+  if (payload.preferences.includes("gastronomie")) {
+    recommendations.push(...pickItems(destinationData.food || [], 3));
+  }
+
+  if (payload.preferences.includes("shopping") || payload.vacationType === "lux") {
+    recommendations.push(...pickItems(destinationData.shopping || [], 2));
+  }
+
+  if (payload.preferences.includes("viata de noapte")) {
+    recommendations.push(...pickItems(destinationData.nightlife || [], 2));
+  }
+
+  return uniqueItems(recommendations).slice(0, 12);
+}
+
+function createMapUrl(destination, location) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location} ${destination}`)}`;
+}
+
 function pickByPreference(payload, options) {
   const joinedPreferences = `${payload.vacationType} ${payload.preferences.join(" ")} ${payload.extraDetails}`.toLowerCase();
   const match = options.find((option) => option.keywords.some((keyword) => joinedPreferences.includes(keyword)));
   return match || options[0];
 }
 
-function buildLocalDay(payload, dayNumber) {
+function buildLocalDay(payload, dayNumber, destinationData, recommendedLocations) {
   const themes = [
     {
       keywords: ["cultural", "muzee", "istorie", "arta"],
@@ -91,6 +157,8 @@ function buildLocalDay(payload, dayNumber) {
   const selectedTheme = pickByPreference(payload, themes);
   const isFirstDay = dayNumber === 1;
   const isLastDay = dayNumber === payload.days;
+  const dayLocations = pickItems(recommendedLocations, 3, (dayNumber - 1) * 2);
+  const locationText = dayLocations.length ? ` Include in traseu: ${dayLocations.join(", ")}.` : "";
 
   return {
     day: dayNumber,
@@ -100,8 +168,8 @@ function buildLocalDay(payload, dayNumber) {
         ? "Ultimele opriri si suveniruri"
         : selectedTheme.title,
     morning: isFirstDay
-      ? `Ajungi in ${payload.destination}, te cazezi daca este posibil si faci o prima plimbare de orientare in zona centrala.`
-      : selectedTheme.morning,
+      ? `Ajungi in ${destinationData?.name || payload.destination}, te cazezi daca este posibil si faci o prima plimbare de orientare in zona centrala.${locationText}`
+      : `${selectedTheme.morning}${locationText}`,
     afternoon: isLastDay
       ? "Pastreaza dupa-amiaza pentru suveniruri, o masa relaxata si obiective ramase aproape de cazare."
       : selectedTheme.afternoon,
@@ -112,15 +180,25 @@ function buildLocalDay(payload, dayNumber) {
 }
 
 function generateLocalTrip(payload) {
+  const destinationData = getDestinationData(payload.destination);
+  const recommendedLocations = getRecommendedLocations(payload, destinationData);
   const preferenceText = payload.preferences.length
     ? payload.preferences.join(", ")
     : "un ritm echilibrat, cu obiective populare si pauze suficiente";
 
   return {
     source: "local",
-    title: `${payload.days} zile in ${payload.destination}`,
-    summary: `Plan gratuit generat local pentru o vacanta de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}.`,
-    days: Array.from({ length: payload.days }, (_, index) => buildLocalDay(payload, index + 1)),
+    title: `${payload.days} zile in ${destinationData?.name || payload.destination}`,
+    summary: destinationData
+      ? `Plan gratuit generat local pentru ${destinationData.name}, cu recomandari reale precum ${recommendedLocations.slice(0, 4).join(", ")}. Vacanta este de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}.`
+      : `Plan gratuit generat local pentru o vacanta de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}. Pentru aceasta destinatie folosim recomandari generale.`,
+    days: Array.from({ length: payload.days }, (_, index) =>
+      buildLocalDay(payload, index + 1, destinationData, recommendedLocations)
+    ),
+    recommendedLocations: recommendedLocations.map((location) => ({
+      name: location,
+      mapUrl: createMapUrl(destinationData?.name || payload.destination, location)
+    })),
     estimatedBudget: `Pentru bugetul de ${payload.budget}, recomand cazare simpla sau medie, transport public unde este disponibil, mese mixte intre localuri accesibile si cateva experiente speciale. Pastreaza aproximativ 10-15% din buget pentru cheltuieli neprevazute.`,
     tips: [
       "Verifica programul obiectivelor inainte de plecare, deoarece orele pot varia in functie de sezon.",
@@ -170,6 +248,16 @@ function renderTrip(plan) {
     .join("");
 
   const tips = plan.tips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("");
+  const recommendations = (plan.recommendedLocations || [])
+    .map(
+      (location) => `
+        <a class="location-card" href="${escapeHtml(location.mapUrl)}" target="_blank" rel="noreferrer">
+          <span>${escapeHtml(location.name)}</span>
+          <small>Vezi pe harta</small>
+        </a>
+      `
+    )
+    .join("");
   const sourceLabel =
     plan.source === "local"
       ? '<span class="source-badge">Generat local gratuit</span>'
@@ -182,6 +270,16 @@ function renderTrip(plan) {
       <h3>${escapeHtml(plan.title)}</h3>
       <p>${escapeHtml(plan.summary)}</p>
     </div>
+    ${
+      recommendations
+        ? `
+          <div class="locations-box">
+            <h3>Locatii recomandate</h3>
+            <div class="locations-grid">${recommendations}</div>
+          </div>
+        `
+        : ""
+    }
     <div class="days-list">${dayCards}</div>
     <div class="budget-box">
       <h3>Buget estimat</h3>

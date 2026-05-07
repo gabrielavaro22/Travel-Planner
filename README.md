@@ -6,6 +6,7 @@ Aplicatie web statica in HTML, CSS si JavaScript care genereaza itinerarii de va
 
 - Formular pentru destinatie, numar de zile, buget, tip de vacanta, preferinte si detalii extra.
 - Generare itinerariu detaliat pe zile cu activitati dimineata, pranz/dupa-amiaza si seara.
+- Recomandari de locatii pentru destinatii populare, cu link direct catre Google Maps.
 - Estimare de buget si sfaturi utile.
 - Istoric salvat in browser cu `localStorage`.
 - Mod gratuit fara cheie API, prin generator local.
