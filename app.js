@@ -279,9 +279,9 @@ function renderTrip(plan) {
     )
     .join("");
   const sourceLabel =
-    plan.source === "local"
-      ? '<span class="source-badge">Generat local gratuit</span>'
-      : '<span class="source-badge">Generat cu OpenAI</span>';
+    plan.source === "gemini"
+      ? '<span class="source-badge">Generat cu Gemini AI</span>'
+      : '<span class="source-badge">Generat local gratuit</span>';
 
   result.className = "result-content";
   result.innerHTML = `
@@ -350,8 +350,32 @@ function renderHistory() {
     .join("");
 }
 
-function generateTrip(payload) {
-  return generateLocalTrip(payload);
+async function generateTrip(payload) {
+  const localPlan = generateLocalTrip(payload);
+
+  try {
+    const response = await fetch("/api/generate-trip", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ payload, localPlan })
+    });
+
+    if (!response.ok) {
+      return localPlan;
+    }
+
+    const geminiPlan = await response.json();
+
+    return {
+      ...localPlan,
+      ...geminiPlan,
+      recommendedLocations: localPlan.recommendedLocations
+    };
+  } catch {
+    return localPlan;
+  }
 }
 
 form.addEventListener("submit", async (event) => {

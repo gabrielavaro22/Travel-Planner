@@ -16,9 +16,17 @@
     {
       "src": "destinations.js",
       "use": "@vercel/static"
+    },
+    {
+      "src": "api/generate-trip.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/generate-trip",
+      "dest": "/api/generate-trip.js"
+    },
     {
       "src": "/styles.css",
       "dest": "/styles.css"

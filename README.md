@@ -1,6 +1,6 @@
 # AI Travel Planner
 
-Aplicatie web statica in HTML, CSS si JavaScript care genereaza itinerarii de vacanta in limba romana. Aplicatia functioneaza gratuit cu un generator local, direct in browser.
+Aplicatie web in HTML, CSS si JavaScript care genereaza itinerarii de vacanta in limba romana. Aplicatia functioneaza gratuit cu un generator local si poate rafina planurile cu Gemini API daca exista `GEMINI_API_KEY`.
 
 ## Functionalitati
 
@@ -11,6 +11,7 @@ Aplicatie web statica in HTML, CSS si JavaScript care genereaza itinerarii de va
 - Estimare de buget si sfaturi utile.
 - Istoric salvat in browser cu `localStorage`.
 - Mod gratuit fara cheie API, prin generator local.
+- Gemini API optional pentru itinerarii mai naturale si mai variate.
 
 ## Rulare locala
 
@@ -32,7 +33,7 @@ npm run dev
 http://localhost:3000
 ```
 
-Aplicatia functioneaza gratuit si nu are nevoie de `.env` sau cheie API.
+Aplicatia functioneaza gratuit si nu are nevoie de `.env` sau cheie API. Pentru Gemini local, creeaza `.env` din `.env.example` si completeaza `GEMINI_API_KEY`.
 
 Optional, pentru a testa exact mediul Vercel:
 
@@ -44,4 +45,5 @@ npm run vercel:dev
 
 1. Incarca proiectul pe GitHub.
 2. Creeaza un proiect nou in Vercel si conecteaza repository-ul.
-3. Ruleaza deploy-ul.
+3. Optional, adauga `GEMINI_API_KEY` in Vercel la Project Settings -> Environment Variables.
+4. Ruleaza deploy-ul.
