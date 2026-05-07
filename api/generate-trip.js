@@ -6,7 +6,17 @@ function sendJson(response, statusCode, payload) {
 }
 
 function hasGeminiKey() {
-  return Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "your_gemini_api_key_here");
+  return Boolean(getGeminiKey());
+}
+
+function getGeminiKey() {
+  const configuredKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+
+  if (configuredKey && configuredKey !== "your_gemini_api_key_here") {
+    return configuredKey;
+  }
+
+  return Object.keys(process.env).find((key) => key.startsWith("AIza")) || "";
 }
 
 function normalizeRequest(body) {
@@ -90,9 +100,10 @@ module.exports = async function handler(request, response) {
   }
 
   try {
-    const geminiResponse = await fetch(`${GEMINI_API_URL}?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`, {
+    const geminiResponse = await fetch(GEMINI_API_URL, {
       method: "POST",
       headers: {
+        "x-goog-api-key": getGeminiKey(),
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
