@@ -18,13 +18,13 @@ Aplicatie web in HTML, CSS si JavaScript care genereaza itinerarii de vacanta in
 1. Instaleaza dependentele:
 
 ```powershell
-npm install
+npm.cmd install
 ```
 
 2. Porneste aplicatia local cu serverul Node inclus:
 
 ```powershell
-npm run dev
+npm.cmd run dev
 ```
 
 3. Deschide:
@@ -33,7 +33,15 @@ npm run dev
 http://localhost:3000
 ```
 
-Aplicatia functioneaza gratuit si nu are nevoie de `.env` sau cheie API. Pentru Gemini local, creeaza `.env` din `.env.example` si completeaza `GEMINI_API_KEY`.
+Aplicatia functioneaza gratuit si nu are nevoie de `.env` sau cheie API. Pentru Gemini local, creeaza `.env` din `.env.example` si completeaza `GEMINI_API_KEY`:
+
+```powershell
+copy .env.example .env
+```
+
+```env
+GEMINI_API_KEY=cheia_ta_gemini
+```
 
 Optional, pentru a testa exact mediul Vercel:
 
@@ -45,5 +53,11 @@ npm run vercel:dev
 
 1. Incarca proiectul pe GitHub.
 2. Creeaza un proiect nou in Vercel si conecteaza repository-ul.
-3. Optional, adauga `GEMINI_API_KEY` in Vercel la Project Settings -> Environment Variables.
+3. Optional, adauga `GEMINI_API_KEY` in Vercel la Project Settings -> Environment Variables pentru Production.
 4. Ruleaza deploy-ul.
+
+Site public:
+
+```text
+https://proiect-practica-rho.vercel.app
+```

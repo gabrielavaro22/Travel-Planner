@@ -1,7 +1,7 @@
 {
   "name": "ai-travel-planner",
   "version": "1.0.0",
-  "description": "Aplicatie web AI Travel Planner cu HTML, CSS, JavaScript si Vercel API.",
+  "description": "Aplicatie web AI Travel Planner cu HTML, CSS, JavaScript, Gemini API optional si fallback local.",
   "private": true,
   "scripts": {
     "dev": "node scripts/local-server.js",

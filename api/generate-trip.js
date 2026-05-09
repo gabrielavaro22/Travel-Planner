@@ -16,7 +16,7 @@ function getGeminiKey() {
     return configuredKey;
   }
 
-  return Object.keys(process.env).find((key) => key.startsWith("AIza")) || "";
+  return "";
 }
 
 function normalizeRequest(body) {
