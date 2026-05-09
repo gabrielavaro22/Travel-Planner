@@ -1227,8 +1227,50 @@ body.pdf-mode-compact .locations-grid {
 }
 
 body.pdf-mode-compact .timeline-step p {
-  display: -webkit-box !important;
-  -webkit-line-clamp: 2 !important;
-  -webkit-box-orient: vertical !important;
-  overflow: hidden !important;
-}
+   display: -webkit-box !important;
+   -webkit-line-clamp: 2 !important;
+   -webkit-box-orient: vertical !important;
+   overflow: hidden !important;
+ }
+
+ .flexibility-info {
+   margin-top: 10px;
+   padding-top: 8px;
+   border-top: 1px dashed rgba(255, 255, 255, 0.1);
+   font-size: 0.8rem;
+   color: rgba(247, 247, 247, 0.6);
+ }
+
+ .flexibility-info small {
+   display: block;
+   margin-bottom: 2px;
+ }
+
+ .flexibility-box {
+   margin-top: 18px;
+   padding: 18px;
+   border: 1px solid var(--line);
+   border-radius: 8px;
+   background: rgba(17, 19, 23, 0.92);
+   color: var(--text);
+ }
+
+ .flexibility-box h3 {
+   margin: 0 0 10px;
+   color: var(--text);
+ }
+
+ .flexibility-content p {
+   margin: 6px 0;
+   color: rgba(247, 247, 247, 0.78);
+   font-size: 0.9rem;
+ }
+
+ .backup-item {
+   display: inline-block;
+   padding: 2px 8px;
+   margin: 2px;
+   background: rgba(239, 35, 60, 0.15);
+   border-radius: 4px;
+   font-size: 0.8rem;
+ }

@@ -142,6 +142,31 @@ function splitLocationsByDay(locations, days) {
   }));
 }
 
+function generateRainyDayOptions(payload, dayNumber) {
+  const rainyActivities = {
+    indoor: [
+      "Muzeu sau galerie de arta",
+      "Centrul comercial sau mall",
+      "Cafenea cu wifi pentru relaxare",
+      "Restaurant/local pentru preparate regionale"
+    ],
+    lowEnergy: [
+      "Cafenea cu carte/magazine",
+      "Parc acoperit sau conservator",
+      "Terasa acoperita",
+      "Atelier de artizanat/manualitati"
+    ]
+  };
+
+  const rainSuggestion = rainyActivities.indoor[dayNumber % rainyActivities.indoor.length];
+  const lowEnergySuggestion = rainyActivities.lowEnergy[dayNumber % rainyActivities.lowEnergy.length];
+
+  return {
+    rainy: `Alternativa pentru vreme rea: ${rainSuggestion}.`,
+    lowEnergy: `Alternativa low-energy: ${lowEnergySuggestion}.`
+  };
+}
+
 function buildLocalDay(payload, dayNumber, destinationData, dayPlan) {
   const themes = [
     {
@@ -174,12 +199,14 @@ function buildLocalDay(payload, dayNumber, destinationData, dayPlan) {
     }
   ];
 
-  const selectedTheme = pickByPreference(payload, themes);
+const selectedTheme = pickByPreference(payload, themes);
   const isFirstDay = dayNumber === 1;
   const isLastDay = dayNumber === payload.days;
   const morningStop = dayPlan?.morning ? ` Recomandare: ${categoryLabel(dayPlan.morning)}.` : "";
   const afternoonStop = dayPlan?.afternoon ? ` Include in traseu: ${categoryLabel(dayPlan.afternoon)}.` : "";
   const eveningStop = dayPlan?.evening ? ` Oprire potrivita: ${categoryLabel(dayPlan.evening)}.` : "";
+
+  const flexOptions = generateRainyDayOptions(payload, dayNumber);
 
   return {
     day: dayNumber,
@@ -196,7 +223,10 @@ function buildLocalDay(payload, dayNumber, destinationData, dayPlan) {
       : `${selectedTheme.afternoon}${afternoonStop}`,
     evening: isFirstDay
       ? `Alege o cina simpla aproape de cazare si stabileste traseul pentru zilele urmatoare.${eveningStop}`
-      : `${selectedTheme.evening}${eveningStop}`
+      : `${selectedTheme.evening}${eveningStop}`,
+    rainyOption: flexOptions.rainy,
+    lowEnergyOption: flexOptions.lowEnergy,
+    optionalActivities: ["Plimbare prin cartier / Fotografii", "Vizită scurtă muzeu / Piata locala"][dayNumber % 2]
   };
 }
 
@@ -225,7 +255,18 @@ function generateLocalTrip(payload) {
       "Foloseste transportul public sau mersul pe jos pentru a controla costurile.",
       "Pastreaza o copie digitala a documentelor si rezervarilor.",
       "Lasa cel putin o activitate flexibila pe zi pentru vreme, oboseala sau descoperiri spontane."
-    ]
+    ],
+    flexibility: {
+      rainyDayBackup: "Muzeu, centrul comercial, cafenea cu wifi sau restaurant pentru o zi plina de activitati acoperite.",
+      lowEnergyOptions: "Cafenea cu carte, parc acoperit, terasa acoperita sau atelier de artizanat pentru zile mai liniștite.",
+      backupActivityPool: [
+        "Muzeu de istorie locala",
+        "Centrul comercial pentru cumparaturi si masa",
+        "Cafenea cu atmosfera placuta",
+        "Biblioteca sau locuri liniștite"
+      ],
+      extraTimeSuggestions: "Foloseste timpul suplimentar pentru vizite la muzeu, relaxare in cafenea sau explorare a zonelor necunoscute din oras."
+    }
   };
 }
 
@@ -307,6 +348,15 @@ function renderTrip(plan) {
         )
         .join("");
 
+      const flexInfo = day.rainyOption || day.lowEnergyOption || day.optionalActivities
+        ? `
+            <div class="flexibility-info">
+              <small><strong>Plan B:</strong> ${escapeHtml(day.rainyOption || "")}</small>
+              <small><strong>Opțional:</strong> ${escapeHtml(day.optionalActivities || "")}</small>
+            </div>
+          `
+        : "";
+
       return `
         <article class="day-card">
           <div class="day-card-header">
@@ -314,6 +364,7 @@ function renderTrip(plan) {
             <h3>${escapeHtml(day.title)}</h3>
           </div>
           <div class="activity-grid timeline-list">${activities}</div>
+          ${flexInfo}
         </article>
       `;
     })
@@ -403,6 +454,21 @@ function renderTrip(plan) {
       <h3>De verificat inainte de plecare</h3>
       <ul>${thingsToVerify}</ul>
     </div>
+    ${
+      plan.flexibility
+        ? `
+      <div class="flexibility-box">
+        <h3>Plan B & Flexibilitate</h3>
+        <div class="flexibility-content">
+          <p><strong>Alternativa pentru vreme rea:</strong> ${escapeHtml(plan.flexibility.rainyDayBackup)}</p>
+          <p><strong>Opțiuni low-energy:</strong> ${escapeHtml(plan.flexibility.lowEnergyOptions)}</p>
+          <p><strong>Activități backup:</strong> ${plan.flexibility.backupActivityPool.map(item => `<span class="backup-item">${escapeHtml(item)}</span>`).join(", ")}</p>
+          <p><strong>Timp suplimentar:</strong> ${escapeHtml(plan.flexibility.extraTimeSuggestions)}</p>
+        </div>
+      </div>
+    `
+        : ""
+    }
   `;
 }
 
