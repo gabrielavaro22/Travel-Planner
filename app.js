@@ -412,24 +412,20 @@ function renderTrip(plan) {
       </div>
       <h3>${escapeHtml(plan.title)}</h3>
       <p>${escapeHtml(plan.summary)}</p>
-      <div class="trip-snapshot" aria-label="Sumar itinerariu">
-        <div class="snapshot-item">
-          <span>Zile</span>
-          <strong>${escapeHtml(dayCount)}</strong>
+<div class="trip-snapshot" aria-label="Sumar itinerariu">
+          <div class="snapshot-item">
+            <span>Zile</span>
+            <strong>${escapeHtml(dayCount)}</strong>
+          </div>
+          <div class="snapshot-item">
+            <span>Locatii</span>
+            <strong>${escapeHtml(locationCount)}</strong>
+          </div>
+          <div class="snapshot-item wide">
+            <span>Buget</span>
+            <strong>${escapeHtml(plan.estimatedBudget ? "Estimare inclusa" : "Nespecificat")}</strong>
+          </div>
         </div>
-        <div class="snapshot-item">
-          <span>Sursa</span>
-          <strong>${escapeHtml(sourceText)}</strong>
-        </div>
-        <div class="snapshot-item">
-          <span>Locatii</span>
-          <strong>${escapeHtml(locationCount)}</strong>
-        </div>
-        <div class="snapshot-item wide">
-          <span>Buget</span>
-          <strong>${escapeHtml(plan.estimatedBudget ? "Estimare inclusa" : "Nespecificat")}</strong>
-        </div>
-      </div>
     </div>
     ${
       recommendations
