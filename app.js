@@ -457,15 +457,69 @@ function renderTrip(plan) {
     ${
       plan.flexibility
         ? `
-      <div class="flexibility-box">
-        <h3>Plan B & Flexibilitate</h3>
-        <div class="flexibility-content">
-          <p><strong>Alternativa pentru vreme rea:</strong> ${escapeHtml(plan.flexibility.rainyDayBackup)}</p>
-          <p><strong>Opțiuni low-energy:</strong> ${escapeHtml(plan.flexibility.lowEnergyOptions)}</p>
-          <p><strong>Activități backup:</strong> ${plan.flexibility.backupActivityPool.map(item => `<span class="backup-item">${escapeHtml(item)}</span>`).join(", ")}</p>
-          <p><strong>Timp suplimentar:</strong> ${escapeHtml(plan.flexibility.extraTimeSuggestions)}</p>
+      <section class="flexibility-section">
+        <div class="flexibility-header">
+          <h3>Plan B & Flexibilitate</h3>
+          <p class="flexibility-subtitle">Călătoriile se pot schimba rapid. Ai variante de rezervă pentru vreme rea, oboseală sau timp liber.</p>
         </div>
-      </div>
+        <div class="flexibility-grid">
+          <div class="flex-card" data-flex-card="rain">
+            <div class="flex-card-header">
+              <span class="flex-icon">☔</span>
+              <div>
+                <h4>Dacă plouă</h4>
+                <p>Activități indoor recomandate</p>
+              </div>
+              <button class="flex-toggle" type="button">Vezi sugestii</button>
+            </div>
+            <div class="flex-card-content">
+              <p class="flex-description">${escapeHtml(plan.flexibility.rainyDayBackup)}</p>
+              ${plan.flexibility.backupActivityPool.slice(0, 2).map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
+            </div>
+          </div>
+          <div class="flex-card" data-flex-card="tired">
+            <div class="flex-card-header">
+              <span class="flex-icon">☕</span>
+              <div>
+                <h4>Dacă ești obosit</h4>
+                <p>Alternative relaxate</p>
+              </div>
+              <button class="flex-toggle" type="button">Vezi sugestii</button>
+            </div>
+            <div class="flex-card-content">
+              <p class="flex-description">${escapeHtml(plan.flexibility.lowEnergyOptions)}</p>
+            </div>
+          </div>
+          <div class="flex-card" data-flex-card="extra">
+            <div class="flex-card-header">
+              <span class="flex-icon">🕐</span>
+              <div>
+                <h4>Dacă ai timp extra</h4>
+                <p>Idei rapide pentru explorare</p>
+              </div>
+              <button class="flex-toggle" type="button">Vezi sugestii</button>
+            </div>
+            <div class="flex-card-content">
+              <p class="flex-description">${escapeHtml(plan.flexibility.extraTimeSuggestions)}</p>
+            </div>
+          </div>
+          <div class="flex-card" data-flex-card="backup">
+            <div class="flex-card-header">
+              <span class="flex-icon">🎒</span>
+              <div>
+                <h4>Activități de rezervă</h4>
+                <p>Backup pool</p>
+              </div>
+              <button class="flex-toggle" type="button">Vezi sugestii</button>
+            </div>
+            <div class="flex-card-content">
+              <div class="flex-chips-grid">
+                ${plan.flexibility.backupActivityPool.map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     `
         : ""
     }
@@ -634,6 +688,15 @@ clearHistoryButton.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
   renderHistory();
   setMessage(currentPlan ? "Istoricul a fost sters." : "", "success");
+});
+
+result.addEventListener("click", (event) => {
+  const toggle = event.target.closest(".flex-toggle");
+  if (!toggle) return;
+
+  const card = toggle.closest(".flex-card");
+  card.classList.toggle("expanded");
+  toggle.textContent = card.classList.contains("expanded") ? "Ascunde" : "Vezi sugestii";
 });
 
 renderHistory();
