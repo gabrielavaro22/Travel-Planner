@@ -238,6 +238,53 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#039;");
 }
 
+function formatPlanSummary(plan, mode = "detailed") {
+  const dayLines = (plan.days || [])
+    .map(
+      (day) =>
+        `Ziua ${day.day}: ${day.title}\n- Dimineata: ${day.morning}\n- Pranz / dupa-amiaza: ${day.afternoon}\n- Seara: ${day.evening}`
+    )
+    .join("\n\n");
+  const tips = (plan.tips || []).map((tip) => `- ${tip}`).join("\n");
+  const lines = [
+    plan.title,
+    "",
+    plan.summary,
+    "",
+    dayLines,
+    "",
+    "Buget estimat:",
+    plan.estimatedBudget,
+    "",
+    "Sfaturi utile:",
+    tips
+  ];
+
+  if (mode === "detailed" && plan.recommendedLocations?.length) {
+    const locationLines = plan.recommendedLocations.map(l => `- ${l.name} (${l.category})`).join("\n");
+    lines.push("", "Locatii recomandate:", locationLines);
+  }
+
+  return lines.filter(Boolean).join("\n");
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
 function renderTrip(plan) {
   currentPlan = plan;
   const dayCards = plan.days
@@ -248,10 +295,13 @@ function renderTrip(plan) {
         ["Seara", day.evening]
       ]
         .map(
-          ([label, text]) => `
-            <div class="activity">
-              <strong>${label}</strong>
-              <p>${escapeHtml(text)}</p>
+          ([label, text], index) => `
+            <div class="activity timeline-step">
+              <span class="timeline-marker">${index + 1}</span>
+              <div>
+                <strong>${label}</strong>
+                <p>${escapeHtml(text)}</p>
+              </div>
             </div>
           `
         )
@@ -259,14 +309,26 @@ function renderTrip(plan) {
 
       return `
         <article class="day-card">
-          <h3>Ziua ${escapeHtml(day.day)}: ${escapeHtml(day.title)}</h3>
-          <div class="activity-grid">${activities}</div>
+          <div class="day-card-header">
+            <span class="day-number">Ziua ${escapeHtml(day.day)}</span>
+            <h3>${escapeHtml(day.title)}</h3>
+          </div>
+          <div class="activity-grid timeline-list">${activities}</div>
         </article>
       `;
     })
     .join("");
 
   const tips = plan.tips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("");
+  const thingsToVerify = [
+    "Programul obiectivelor si zilele de inchidere",
+    "Vremea cu 24-48h inainte de plecare",
+    "Transportul local si timpii reali intre opriri",
+    "Biletele pentru atractiile populare",
+    "Sarbatorile locale sau evenimentele speciale"
+  ]
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
   const recommendations = (plan.recommendedLocations || [])
     .map(
       (location) => `
@@ -278,17 +340,45 @@ function renderTrip(plan) {
       `
     )
     .join("");
-  const sourceLabel =
-    plan.source === "gemini"
-      ? '<span class="source-badge">Generat cu Gemini AI</span>'
-      : '<span class="source-badge">Generat local gratuit</span>';
+  const sourceText = plan.source === "gemini" ? "Gemini AI" : "Fallback local";
+  const dayCount = Array.isArray(plan.days) ? plan.days.length : 0;
+  const locationCount = Array.isArray(plan.recommendedLocations) ? plan.recommendedLocations.length : 0;
 
   result.className = "result-content";
   result.innerHTML = `
     <div class="trip-header">
-      ${sourceLabel}
+      <div class="trip-title-row">
+        <div class="trip-actions">
+          <span class="trip-kicker">Itinerariu personalizat</span>
+          <button class="copy-summary-button" type="button" data-action="copy-summary">Copiaza sumar</button>
+          <label for="pdf-mode" class="pdf-mode-label">Mod PDF:</label>
+          <select id="pdf-mode" class="pdf-mode-select">
+            <option value="detailed">Detaliat</option>
+            <option value="compact">Compact</option>
+          </select>
+          <button class="export-pdf-button" type="button" data-action="export-pdf">Export PDF</button>
+        </div>
+      </div>
       <h3>${escapeHtml(plan.title)}</h3>
       <p>${escapeHtml(plan.summary)}</p>
+      <div class="trip-snapshot" aria-label="Sumar itinerariu">
+        <div class="snapshot-item">
+          <span>Zile</span>
+          <strong>${escapeHtml(dayCount)}</strong>
+        </div>
+        <div class="snapshot-item">
+          <span>Sursa</span>
+          <strong>${escapeHtml(sourceText)}</strong>
+        </div>
+        <div class="snapshot-item">
+          <span>Locatii</span>
+          <strong>${escapeHtml(locationCount)}</strong>
+        </div>
+        <div class="snapshot-item wide">
+          <span>Buget</span>
+          <strong>${escapeHtml(plan.estimatedBudget ? "Estimare inclusa" : "Nespecificat")}</strong>
+        </div>
+      </div>
     </div>
     ${
       recommendations
@@ -308,6 +398,10 @@ function renderTrip(plan) {
     <div class="tips-box">
       <h3>Sfaturi utile</h3>
       <ul>${tips}</ul>
+    </div>
+    <div class="verify-box">
+      <h3>De verificat inainte de plecare</h3>
+      <ul>${thingsToVerify}</ul>
     </div>
   `;
 }
@@ -340,10 +434,11 @@ function renderHistory() {
         <article class="history-item">
           <h3>${escapeHtml(item.plan.title)}</h3>
           <p>${escapeHtml(item.request.destination)} - ${escapeHtml(item.request.days)} zile - ${escapeHtml(item.request.budget)}</p>
-          <div class="history-actions">
-            <button class="small-button" type="button" data-action="open" data-id="${item.id}">Deschide</button>
-            <button class="small-button" type="button" data-action="delete" data-id="${item.id}">Sterge</button>
-          </div>
+<div class="history-actions">
+             <button class="small-button" type="button" data-action="open" data-id="${item.id}">Deschide</button>
+             <button class="small-button" type="button" data-action="export-pdf-history" data-id="${item.id}">Export PDF</button>
+             <button class="small-button" type="button" data-action="delete" data-id="${item.id}">Sterge</button>
+           </div>
         </article>
       `
     )
@@ -414,17 +509,60 @@ historyList.addEventListener("click", (event) => {
   const item = history.find((entry) => entry.id === button.dataset.id);
   if (!item) return;
 
-  if (button.dataset.action === "open") {
-    renderTrip(item.plan);
-    window.location.hash = "planner";
-    setMessage("Itinerariul salvat a fost deschis.", "success");
-  }
+if (button.dataset.action === "open") {
+     renderTrip(item.plan);
+     window.location.hash = "planner";
+     setMessage("Itinerariul salvat a fost deschis.", "success");
+   }
 
-  if (button.dataset.action === "delete") {
+   if (button.dataset.action === "export-pdf-history") {
+     renderTrip(item.plan);
+     setTimeout(() => {
+       const mode = "detailed";
+       document.body.classList.add(`pdf-mode-${mode}`);
+       window.print();
+       setTimeout(() => {
+         document.body.classList.remove('pdf-mode-compact', 'pdf-mode-detailed');
+       }, 1000);
+     }, 100);
+   }
+
+   if (button.dataset.action === "delete") {
     saveHistory(history.filter((entry) => entry.id !== item.id));
     renderHistory();
   }
 });
+
+result.addEventListener("click", async (event) => {
+   const button = event.target.closest("button[data-action='copy-summary']");
+   if (!button || !currentPlan) return;
+
+   const mode = document.getElementById('pdf-mode')?.value || 'detailed';
+   try {
+     await copyTextToClipboard(formatPlanSummary(currentPlan, mode));
+     setMessage("Sumarul itinerariului a fost copiat.", "success");
+   } catch {
+     setMessage("Nu am putut copia sumarul. Incearca din nou.");
+   }
+ });
+
+result.addEventListener("click", async (event) => {
+   const button = event.target.closest("button[data-action='export-pdf']");
+   if (!button || !currentPlan) return;
+
+   const mode = document.getElementById('pdf-mode').value;
+   try {
+     // Add print mode class to body
+     document.body.classList.add(`pdf-mode-${mode}`);
+     // Trigger print dialog
+     window.print();
+   } catch (error) {
+     setMessage("Nu am putut genera PDF-ul. Incearca din nou.");
+   } finally {
+     // Remove print mode classes
+     document.body.classList.remove('pdf-mode-compact', 'pdf-mode-detailed');
+   }
+ });
 
 clearHistoryButton.addEventListener("click", () => {
   localStorage.removeItem(STORAGE_KEY);
