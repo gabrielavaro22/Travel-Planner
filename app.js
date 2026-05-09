@@ -279,6 +279,32 @@ function escapeHtml(value = "") {
     .replaceAll("'", "&#039;");
 }
 
+function cleanMarkdown(text) {
+  if (!text) return "";
+  const escaped = escapeHtml(text);
+  return escaped
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em")
+    .replace(/__(.*?)__/g, "<strong>$1</strong>")
+    .replace(/_(.*?)_/g, "<em>$1</em")
+    .replace(/`(.*?)`/g, "<code>$1</code>");
+}
+
+function summarizeBudget(budgetText) {
+  if (!budgetText) return null;
+  const lines = budgetText
+    .split(".")
+    .map(s => s.trim())
+    .filter(s => s.length > 10)
+    .slice(0, 4);
+  return lines;
+}
+
+function formatTipText(tip) {
+  const cleaned = cleanMarkdown(tip);
+  return cleaned;
+}
+
 function formatPlanSummary(plan, mode = "detailed") {
   const dayLines = (plan.days || [])
     .map(
@@ -491,34 +517,34 @@ result.className = "result-content";
               <p>Activități indoor recomandate</p>
             </div>
           </div>
-          <div class="flex-card-content">
-            <p class="flex-description">${escapeHtml(plan.flexibility.rainyDayBackup)}</p>
-            ${plan.flexibility.backupActivityPool.slice(0, 2).map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
-          </div>
-        </div>
-        <div class="flex-card" data-flex-card="tired">
-          <div class="flex-card-header">
-            <span class="flex-icon">☕</span>
-            <div>
-              <h4>Dacă ești obosit</h4>
-              <p>Alternative relaxate</p>
-            </div>
-          </div>
-          <div class="flex-card-content">
-            <p class="flex-description">${escapeHtml(plan.flexibility.lowEnergyOptions)}</p>
-          </div>
-        </div>
-        <div class="flex-card" data-flex-card="extra">
-          <div class="flex-card-header">
-            <span class="flex-icon">🕐</span>
-            <div>
-              <h4>Dacă ai timp extra</h4>
-              <p>Idei rapide pentru explorare</p>
-            </div>
-          </div>
-          <div class="flex-card-content">
-            <p class="flex-description">${escapeHtml(plan.flexibility.extraTimeSuggestions)}</p>
-          </div>
+<div class="flex-card-content">
+             <p class="flex-description">${cleanMarkdown(plan.flexibility.rainyDayBackup)}</p>
+             ${plan.flexibility.backupActivityPool.slice(0, 2).map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
+           </div>
+         </div>
+         <div class="flex-card" data-flex-card="tired">
+           <div class="flex-card-header">
+             <span class="flex-icon">☕</span>
+             <div>
+               <h4>Dacă ești obosit</h4>
+               <p>Alternative relaxate</p>
+             </div>
+           </div>
+           <div class="flex-card-content">
+             <p class="flex-description">${cleanMarkdown(plan.flexibility.lowEnergyOptions)}</p>
+           </div>
+         </div>
+         <div class="flex-card" data-flex-card="extra">
+           <div class="flex-card-header">
+             <span class="flex-icon">🕐</span>
+             <div>
+               <h4>Dacă ai timp extra</h4>
+               <p>Idei rapide pentru explorare</p>
+             </div>
+           </div>
+           <div class="flex-card-content">
+             <p class="flex-description">${cleanMarkdown(plan.flexibility.extraTimeSuggestions)}</p>
+           </div>
         </div>
         <div class="flex-card" data-flex-card="backup">
           <div class="flex-card-header">
