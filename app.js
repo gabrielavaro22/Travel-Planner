@@ -143,27 +143,27 @@ function splitLocationsByDay(locations, days) {
 }
 
 function generateRainyDayOptions(payload, dayNumber) {
-  const rainyActivities = {
-    indoor: [
-      "Muzeu sau galerie de arta",
-      "Centrul comercial sau mall",
-      "Cafenea cu wifi pentru relaxare",
-      "Restaurant/local pentru preparate regionale"
-    ],
-    lowEnergy: [
-      "Cafenea cu carte/magazine",
-      "Parc acoperit sau conservator",
-      "Terasa acoperita",
-      "Atelier de artizanat/manualitati"
-    ]
-  };
+  const destination = payload.destination || "orasul tau";
+  const rainyActivities = [
+    { type: "Muzeu", example: `Muzeul National de ${destination}` },
+    { type: "Centrul comercial", example: `Centrul Comercial ${destination} Mall` },
+    { type: "Cafenea", example: `Cafenea Literara ${destination}` },
+    { type: "Restaurant", example: `Restaurantul Tradițional ${destination}` }
+  ];
 
-  const rainSuggestion = rainyActivities.indoor[dayNumber % rainyActivities.indoor.length];
-  const lowEnergySuggestion = rainyActivities.lowEnergy[dayNumber % rainyActivities.lowEnergy.length];
+  const lowEnergyActivities = [
+    { type: "Cafenea cu carte", example: `Carturesti Carusel - ${destination}` },
+    { type: "Parc acoperit", example: `Conservatorul Botanic ${destination}` },
+    { type: "Terasa acoperita", example: `Terasa Central ${destination}` },
+    { type: "Atelier artizant", example: `Atelierul de Artizant ${destination}` }
+  ];
+
+  const rainItem = rainyActivities[dayNumber % rainyActivities.length];
+  const lowEnergyItem = lowEnergyActivities[dayNumber % lowEnergyActivities.length];
 
   return {
-    rainy: `Alternativa pentru vreme rea: ${rainSuggestion}.`,
-    lowEnergy: `Alternativa low-energy: ${lowEnergySuggestion}.`
+    rainy: `Alternativa pentru vreme rea: ${rainItem.example} (${rainItem.type}).`,
+    lowEnergy: `Alternativa low-energy: ${lowEnergyItem.example} (${lowEnergyItem.type}).`
   };
 }
 
@@ -257,15 +257,15 @@ function generateLocalTrip(payload) {
       "Lasa cel putin o activitate flexibila pe zi pentru vreme, oboseala sau descoperiri spontane."
     ],
     flexibility: {
-      rainyDayBackup: "Muzeu, centrul comercial, cafenea cu wifi sau restaurant pentru o zi plina de activitati acoperite.",
-      lowEnergyOptions: "Cafenea cu carte, parc acoperit, terasa acoperita sau atelier de artizanat pentru zile mai liniștite.",
+      rainyDayBackup: `Muzeul National, Centrul Comercial ${payload.destination} Mall, Cafenea Literara sau Restaurantul Tradițional pentru activități acoperite.`,
+      lowEnergyOptions: `Carturesti Carusel (cafenea cu carte), Conservatorul Botanic (${payload.destination}), Terasa Central sau Atelierul de Artizant pentru zile liniștite.`,
       backupActivityPool: [
-        "Muzeu de istorie locala",
-        "Centrul comercial pentru cumparaturi si masa",
-        "Cafenea cu atmosfera placuta",
-        "Biblioteca sau locuri liniștite"
+        `Muzeul de Istorie Locala ${payload.destination}`,
+        `Centrul Comercial pentru cumparaturi si masa`,
+        `Cafenea cu atmosfera placuta din centru`,
+        `Biblioteca Municipală ${payload.destination}`
       ],
-      extraTimeSuggestions: "Foloseste timpul suplimentar pentru vizite la muzeu, relaxare in cafenea sau explorare a zonelor necunoscute din oras."
+      extraTimeSuggestions: "Foloseste timpul suplimentar pentru vizite la Muzeul National, relaxare in Cafenea Literara sau explorare a cartierelor istorice."
     }
   };
 }
