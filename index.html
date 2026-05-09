@@ -34,7 +34,8 @@
    </section>
 
       <section class="workspace" id="planner" aria-label="Generator de vacante">
-        <form class="planner-form" id="planner-form">
+        <div class="workspace-main">
+          <form class="planner-form" id="planner-form">
           <div class="section-heading">
             <p class="eyebrow">Detaliile vacantei</p>
             <h2>Spune-mi cum vrei sa calatoresti</h2>
@@ -96,10 +97,28 @@
 
           <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
 
-          <button class="primary-button" id="generate-button" type="submit">
-            Genereaza vacanta
-          </button>
-        </form>
+<button class="primary-button" id="generate-button" type="submit">
+             Genereaza vacanta
+           </button>
+         </form>
+
+         <aside class="sidebar-panel" aria-label="Informatii aditionale">
+           <div id="budget-sidebar" class="sidebar-content">
+             <div class="section-heading compact">
+               <p class="eyebrow">Buget</p>
+               <h3>Buget estimat</h3>
+             </div>
+             <div class="sidebar-empty">Completeaza formularul pentru a vedea bugetul.</div>
+           </div>
+           <div id="tips-sidebar" class="sidebar-content">
+             <div class="section-heading compact">
+               <p class="eyebrow">Sfaturi</p>
+               <h3>Sfaturi utile</h3>
+             </div>
+             <div class="sidebar-empty">Completeaza formularul pentru sfaturi personalizate.</div>
+           </div>
+</aside>
+        </div>
 
         <section class="result-panel" aria-labelledby="result-title">
           <div class="section-heading compact">
@@ -110,7 +129,7 @@
             Completeaza formularul si genereaza o vacanta personalizata.
           </div>
         </section>
-      </section>
+       </section>
 
       <section class="history-section" id="history" aria-labelledby="history-title">
         <div class="history-header">

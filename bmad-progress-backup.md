@@ -139,6 +139,7 @@ Components:
 
 ## Constraints
 Do not:
+-change the functions, expecially the APY GEMINI KEY
 - rewrite the app from zero
 - modify backend unless absolutely necessary
 - modify API endpoints

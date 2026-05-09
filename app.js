@@ -395,131 +395,149 @@ function renderTrip(plan) {
   const dayCount = Array.isArray(plan.days) ? plan.days.length : 0;
   const locationCount = Array.isArray(plan.recommendedLocations) ? plan.recommendedLocations.length : 0;
 
-  result.className = "result-content";
-  result.innerHTML = `
-    <div class="trip-header">
-      <div class="trip-title-row">
-        <div class="trip-actions">
-          <span class="trip-kicker">Itinerariu personalizat</span>
-          <label for="pdf-mode" class="pdf-mode-label">Mod PDF:</label>
-          <select id="pdf-mode" class="pdf-mode-select">
-            <option value="detailed">Detaliat</option>
-            <option value="compact">Compact</option>
-          </select>
-          <button class="copy-summary-button" type="button" data-action="copy-summary">Copiaza sumar</button>
-          <button class="export-pdf-button" type="button" data-action="export-pdf">Export PDF</button>
+result.className = "result-content";
+   result.innerHTML = `
+     <div class="trip-header">
+       <div class="trip-title-row">
+         <div class="trip-actions">
+           <span class="trip-kicker">Itinerariu personalizat</span>
+           <label for="pdf-mode" class="pdf-mode-label">Mod PDF:</label>
+           <select id="pdf-mode" class="pdf-mode-select">
+             <option value="detailed">Detaliat</option>
+             <option value="compact">Compact</option>
+           </select>
+           <button class="copy-summary-button" type="button" data-action="copy-summary">Copiaza sumar</button>
+           <button class="export-pdf-button" type="button" data-action="export-pdf">Export PDF</button>
+         </div>
+       </div>
+       <h3>${escapeHtml(plan.title)}</h3>
+       <p>${escapeHtml(plan.summary)}</p>
+       <div class="trip-snapshot" aria-label="Sumar itinerariu">
+           <div class="snapshot-item">
+             <span>Zile</span>
+             <strong>${escapeHtml(dayCount)}</strong>
+           </div>
+           <div class="snapshot-item">
+             <span>Locatii</span>
+             <strong>${escapeHtml(locationCount)}</strong>
+           </div>
+           <div class="snapshot-item wide">
+             <span>Buget</span>
+             <strong>${escapeHtml(plan.estimatedBudget ? "Estimare inclusa" : "Nespecificat")}</strong>
+           </div>
+         </div>
+     </div>
+     ${
+       recommendations
+         ? `
+           <div class="locations-box">
+             <h3>Locatii recomandate</h3>
+             <div class="locations-grid">${recommendations}</div>
+           </div>
+         `
+         : ""
+     }
+     <div class="days-list">${dayCards}</div>
+   `;
+
+  const budgetSidebar = document.getElementById("budget-sidebar");
+  const tipsSidebar = document.getElementById("tips-sidebar");
+  if (budgetSidebar) {
+    budgetSidebar.innerHTML = plan.estimatedBudget
+      ? `<div class="section-heading compact">
+           <p class="eyebrow">Buget</p>
+           <h3>Buget estimat</h3>
+         </div>
+         <div class="budget-sidebar-content">
+           <p class="budget-short">${escapeHtml(plan.estimatedBudget)}</p>
+         </div>`
+      : `<div class="section-heading compact">
+           <p class="eyebrow">Buget</p>
+           <h3>Buget estimat</h3>
+         </div>
+         <div class="sidebar-empty">Nu exista informatii despre buget.</div>`;
+  }
+  if (tipsSidebar) {
+    const visibleTips = plan.tips.slice(0, 4);
+    const hasMore = plan.tips.length > 4;
+    tipsSidebar.innerHTML = plan.tips.length
+      ? `<div class="section-heading compact">
+           <p class="eyebrow">Sfaturi</p>
+           <h3>Sfaturi utile</h3>
+         </div>
+         <ul class="tips-checklist">${visibleTips.map((tip, idx) => `<li class="tip-item"><input type="checkbox" id="tip-${idx}"><label for="tip-${idx}">${escapeHtml(tip)}</label></li>`).join("")}</ul>
+         ${hasMore ? `<button class="tip-toggle" type="button">Vezi toate sfaturile</button>` : ""}`
+      : `<div class="section-heading compact">
+           <p class="eyebrow">Sfaturi</p>
+           <h3>Sfaturi utile</h3>
+         </div>
+         <div class="sidebar-empty">Nu exista sfaturi disponibile.</div>`;
+  }
+
+  if (plan.flexibility) {
+    const flexContainer = document.createElement("section");
+    flexContainer.className = "flexibility-full";
+    flexContainer.innerHTML = `
+      <div class="flexibility-header">
+        <h3>Plan B & Flexibilitate</h3>
+        <p class="flexibility-subtitle">Călătoriile se pot schimba rapid. Ai variante de rezervă pentru vreme rea, oboseală sau timp liber.</p>
+      </div>
+      <div class="flexibility-grid">
+        <div class="flex-card" data-flex-card="rain">
+          <div class="flex-card-header">
+            <span class="flex-icon">☔</span>
+            <div>
+              <h4>Dacă plouă</h4>
+              <p>Activități indoor recomandate</p>
+            </div>
+          </div>
+          <div class="flex-card-content">
+            <p class="flex-description">${escapeHtml(plan.flexibility.rainyDayBackup)}</p>
+            ${plan.flexibility.backupActivityPool.slice(0, 2).map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
+          </div>
+        </div>
+        <div class="flex-card" data-flex-card="tired">
+          <div class="flex-card-header">
+            <span class="flex-icon">☕</span>
+            <div>
+              <h4>Dacă ești obosit</h4>
+              <p>Alternative relaxate</p>
+            </div>
+          </div>
+          <div class="flex-card-content">
+            <p class="flex-description">${escapeHtml(plan.flexibility.lowEnergyOptions)}</p>
+          </div>
+        </div>
+        <div class="flex-card" data-flex-card="extra">
+          <div class="flex-card-header">
+            <span class="flex-icon">🕐</span>
+            <div>
+              <h4>Dacă ai timp extra</h4>
+              <p>Idei rapide pentru explorare</p>
+            </div>
+          </div>
+          <div class="flex-card-content">
+            <p class="flex-description">${escapeHtml(plan.flexibility.extraTimeSuggestions)}</p>
+          </div>
+        </div>
+        <div class="flex-card" data-flex-card="backup">
+          <div class="flex-card-header">
+            <span class="flex-icon">🎒</span>
+            <div>
+              <h4>Activități de rezervă</h4>
+              <p>Backup pool</p>
+            </div>
+          </div>
+          <div class="flex-card-content">
+            <div class="flex-chips-grid">
+              ${plan.flexibility.backupActivityPool.map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
+            </div>
+          </div>
         </div>
       </div>
-      <h3>${escapeHtml(plan.title)}</h3>
-      <p>${escapeHtml(plan.summary)}</p>
-<div class="trip-snapshot" aria-label="Sumar itinerariu">
-          <div class="snapshot-item">
-            <span>Zile</span>
-            <strong>${escapeHtml(dayCount)}</strong>
-          </div>
-          <div class="snapshot-item">
-            <span>Locatii</span>
-            <strong>${escapeHtml(locationCount)}</strong>
-          </div>
-          <div class="snapshot-item wide">
-            <span>Buget</span>
-            <strong>${escapeHtml(plan.estimatedBudget ? "Estimare inclusa" : "Nespecificat")}</strong>
-          </div>
-        </div>
-    </div>
-    ${
-      recommendations
-        ? `
-          <div class="locations-box">
-            <h3>Locatii recomandate</h3>
-            <div class="locations-grid">${recommendations}</div>
-          </div>
-        `
-        : ""
-    }
-    <div class="days-list">${dayCards}</div>
-    <div class="budget-box">
-      <h3>Buget estimat</h3>
-      <p>${escapeHtml(plan.estimatedBudget)}</p>
-    </div>
-    <div class="tips-box">
-      <h3>Sfaturi utile</h3>
-      <ul>${tips}</ul>
-    </div>
-    <div class="verify-box">
-      <h3>De verificat inainte de plecare</h3>
-      <ul>${thingsToVerify}</ul>
-    </div>
-    ${
-      plan.flexibility
-        ? `
-      <section class="flexibility-section">
-        <div class="flexibility-header">
-          <h3>Plan B & Flexibilitate</h3>
-          <p class="flexibility-subtitle">Călătoriile se pot schimba rapid. Ai variante de rezervă pentru vreme rea, oboseală sau timp liber.</p>
-        </div>
-        <div class="flexibility-grid">
-          <div class="flex-card" data-flex-card="rain">
-            <div class="flex-card-header">
-              <span class="flex-icon">☔</span>
-              <div>
-                <h4>Dacă plouă</h4>
-                <p>Activități indoor recomandate</p>
-              </div>
-              <button class="flex-toggle" type="button">Vezi sugestii</button>
-            </div>
-            <div class="flex-card-content">
-              <p class="flex-description">${escapeHtml(plan.flexibility.rainyDayBackup)}</p>
-              ${plan.flexibility.backupActivityPool.slice(0, 2).map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
-            </div>
-          </div>
-          <div class="flex-card" data-flex-card="tired">
-            <div class="flex-card-header">
-              <span class="flex-icon">☕</span>
-              <div>
-                <h4>Dacă ești obosit</h4>
-                <p>Alternative relaxate</p>
-              </div>
-              <button class="flex-toggle" type="button">Vezi sugestii</button>
-            </div>
-            <div class="flex-card-content">
-              <p class="flex-description">${escapeHtml(plan.flexibility.lowEnergyOptions)}</p>
-            </div>
-          </div>
-          <div class="flex-card" data-flex-card="extra">
-            <div class="flex-card-header">
-              <span class="flex-icon">🕐</span>
-              <div>
-                <h4>Dacă ai timp extra</h4>
-                <p>Idei rapide pentru explorare</p>
-              </div>
-              <button class="flex-toggle" type="button">Vezi sugestii</button>
-            </div>
-            <div class="flex-card-content">
-              <p class="flex-description">${escapeHtml(plan.flexibility.extraTimeSuggestions)}</p>
-            </div>
-          </div>
-          <div class="flex-card" data-flex-card="backup">
-            <div class="flex-card-header">
-              <span class="flex-icon">🎒</span>
-              <div>
-                <h4>Activități de rezervă</h4>
-                <p>Backup pool</p>
-              </div>
-              <button class="flex-toggle" type="button">Vezi sugestii</button>
-            </div>
-            <div class="flex-card-content">
-              <div class="flex-chips-grid">
-                ${plan.flexibility.backupActivityPool.map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    `
-        : ""
-    }
-  `;
+    `;
+    result.parentNode.insertBefore(flexContainer, result.nextSibling);
+  }
 }
 
 function addTripToHistory(plan, request) {
@@ -687,12 +705,28 @@ clearHistoryButton.addEventListener("click", () => {
 });
 
 result.addEventListener("click", (event) => {
-  const toggle = event.target.closest(".flex-toggle");
-  if (!toggle) return;
+   const toggle = event.target.closest(".flex-toggle");
+   if (!toggle) return;
 
-  const card = toggle.closest(".flex-card");
-  card.classList.toggle("expanded");
-  toggle.textContent = card.classList.contains("expanded") ? "Ascunde" : "Vezi sugestii";
-});
+   const card = toggle.closest(".flex-card");
+   card.classList.toggle("expanded");
+   toggle.textContent = card.classList.contains("expanded") ? "Ascunde" : "Vezi sugestii";
+ });
+
+ document.addEventListener("click", (event) => {
+   const flexCard = event.target.closest(".flexibility-full .flex-card");
+   if (flexCard && !event.target.closest(".flex-toggle")) {
+     flexCard.classList.toggle("expanded");
+   }
+ });
+
+ document.addEventListener("click", (event) => {
+   const tipToggle = event.target.closest(".tip-toggle");
+   if (tipToggle) {
+     const sidebar = tipToggle.closest(".sidebar-content");
+     sidebar.classList.toggle("tips-expanded");
+     tipToggle.textContent = sidebar.classList.contains("tips-expanded") ? "Ascunde sfaturi" : "Vezi toate sfaturile";
+   }
+ });
 
 renderHistory();
