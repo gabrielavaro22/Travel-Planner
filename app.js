@@ -350,12 +350,12 @@ function renderTrip(plan) {
       <div class="trip-title-row">
         <div class="trip-actions">
           <span class="trip-kicker">Itinerariu personalizat</span>
-          <button class="copy-summary-button" type="button" data-action="copy-summary">Copiaza sumar</button>
           <label for="pdf-mode" class="pdf-mode-label">Mod PDF:</label>
           <select id="pdf-mode" class="pdf-mode-select">
             <option value="detailed">Detaliat</option>
             <option value="compact">Compact</option>
           </select>
+          <button class="copy-summary-button" type="button" data-action="copy-summary">Copiaza sumar</button>
           <button class="export-pdf-button" type="button" data-action="export-pdf">Export PDF</button>
         </div>
       </div>
