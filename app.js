@@ -557,7 +557,7 @@ if (tipsSidebar) {
     tipsSidebar.dataset.currentTip = 0;
   }
 
-  if (plan.flexibility) {
+if (plan.flexibility) {
     const flexContainer = document.createElement("section");
     flexContainer.className = "flexibility-full";
     flexContainer.innerHTML = `
@@ -567,53 +567,50 @@ if (tipsSidebar) {
       </div>
       <div class="flexibility-grid">
         <div class="flex-card" data-flex-card="rain">
-          <div class="flex-card-header">
-            <span class="flex-icon">☔</span>
-            <div>
+          <div class="flex-card-inner">
+            <div class="flex-card-face flex-card-front">
+              <span class="flex-icon">☔</span>
               <h4>Dacă plouă</h4>
-              <p>Activități indoor recomandate</p>
+            </div>
+            <div class="flex-card-face flex-card-back">
+              <p class="flex-back-subtitle">Activități indoor</p>
+              <ul class="flex-back-list">${plan.flexibility.rainyDayBackup.split(/[,.]+/).slice(0, 4).map(item => `<li>${escapeHtml(item.trim())}</li>`).join("")}</ul>
             </div>
           </div>
-<div class="flex-card-content">
-             <p class="flex-description">${cleanMarkdown(plan.flexibility.rainyDayBackup)}</p>
-             ${plan.flexibility.backupActivityPool.slice(0, 2).map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
-           </div>
-         </div>
-         <div class="flex-card" data-flex-card="tired">
-           <div class="flex-card-header">
-             <span class="flex-icon">☕</span>
-             <div>
-               <h4>Dacă ești obosit</h4>
-               <p>Alternative relaxate</p>
-             </div>
-           </div>
-           <div class="flex-card-content">
-             <p class="flex-description">${cleanMarkdown(plan.flexibility.lowEnergyOptions)}</p>
-           </div>
-         </div>
-         <div class="flex-card" data-flex-card="extra">
-           <div class="flex-card-header">
-             <span class="flex-icon">🕐</span>
-             <div>
-               <h4>Dacă ai timp extra</h4>
-               <p>Idei rapide pentru explorare</p>
-             </div>
-           </div>
-           <div class="flex-card-content">
-             <p class="flex-description">${cleanMarkdown(plan.flexibility.extraTimeSuggestions)}</p>
-           </div>
+        </div>
+        <div class="flex-card" data-flex-card="tired">
+          <div class="flex-card-inner">
+            <div class="flex-card-face flex-card-front">
+              <span class="flex-icon">☕</span>
+              <h4>Dacă ești obosit</h4>
+            </div>
+            <div class="flex-card-face flex-card-back">
+              <p class="flex-back-subtitle">Alternative relaxate</p>
+              <ul class="flex-back-list">${plan.flexibility.lowEnergyOptions.split(/[,.]+/).slice(0, 4).map(item => `<li>${escapeHtml(item.trim())}</li>`).join("")}</ul>
+            </div>
+          </div>
+        </div>
+        <div class="flex-card" data-flex-card="extra">
+          <div class="flex-card-inner">
+            <div class="flex-card-face flex-card-front">
+              <span class="flex-icon">⏱</span>
+              <h4>Dacă ai timp extra</h4>
+            </div>
+            <div class="flex-card-face flex-card-back">
+              <p class="flex-back-subtitle">Idei rapide</p>
+              <ul class="flex-back-list">${plan.flexibility.extraTimeSuggestions.split(/[,.]+/).slice(0, 4).map(item => `<li>${escapeHtml(item.trim())}</li>`).join("")}</ul>
+            </div>
+          </div>
         </div>
         <div class="flex-card" data-flex-card="backup">
-          <div class="flex-card-header">
-            <span class="flex-icon">🎒</span>
-            <div>
+          <div class="flex-card-inner">
+            <div class="flex-card-face flex-card-front">
+              <span class="flex-icon">🎒</span>
               <h4>Activități de rezervă</h4>
-              <p>Backup pool</p>
             </div>
-          </div>
-          <div class="flex-card-content">
-            <div class="flex-chips-grid">
-              ${plan.flexibility.backupActivityPool.map(item => `<span class="flex-chip">${escapeHtml(item)}</span>`).join("")}
+            <div class="flex-card-face flex-card-back">
+              <p class="flex-back-subtitle">Backup pool</p>
+              <ul class="flex-back-list">${plan.flexibility.backupActivityPool.slice(0, 4).map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
             </div>
           </div>
         </div>
@@ -797,13 +794,6 @@ result.addEventListener("click", (event) => {
  });
 
 document.addEventListener("click", (event) => {
-    const flexCard = event.target.closest(".flexibility-full .flex-card");
-    if (flexCard && !event.target.closest(".flex-toggle")) {
-      flexCard.classList.toggle("expanded");
-    }
-  });
-
-  document.addEventListener("click", (event) => {
     const tipNav = event.target.closest(".tips-nav");
     if (!tipNav) return;
 
@@ -866,6 +856,12 @@ document.addEventListener("click", (event) => {
       details.classList.toggle("expanded");
       budgetToggle.textContent = details.classList.contains("expanded") ? "Ascunde detalii" : "Vezi detalii buget";
     }
+  });
+
+  document.addEventListener("click", (event) => {
+    const flexCard = event.target.closest(".flexibility-full .flex-card");
+    if (!flexCard || event.target.closest(".flex-card-back")) return;
+    flexCard.classList.toggle("flipped");
   });
 
 renderHistory();
