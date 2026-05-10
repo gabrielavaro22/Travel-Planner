@@ -530,21 +530,31 @@ const budgetSidebar = document.getElementById("budget-sidebar");
       <div class="sidebar-empty">Nu exista informatii despre buget.</div>
     `;
   }
-  if (tipsSidebar) {
-    const visibleTips = plan.tips.slice(0, 4);
-    const hasMore = plan.tips.length > 4;
-    tipsSidebar.innerHTML = plan.tips.length
+if (tipsSidebar) {
+    const tips = plan.tips || [];
+    const tipCards = tips.map((tip, i) => `
+      <div class="tips-card" style="display: ${i === 0 ? 'block' : 'none'}">
+        <div class="tips-counter">Sfat ${i + 1} / ${tips.length}</div>
+        <div class="tips-content">${escapeHtml(tip)}</div>
+      </div>
+    `).join("");
+    tipsSidebar.innerHTML = tips.length
       ? `<div class="section-heading compact">
            <p class="eyebrow">Sfaturi</p>
            <h3>Sfaturi utile</h3>
          </div>
-         <ul class="tips-checklist">${visibleTips.map((tip, idx) => `<li class="tip-item"><input type="checkbox" id="tip-${idx}"><label for="tip-${idx}">${escapeHtml(tip)}</label></li>`).join("")}</ul>
-         ${hasMore ? `<button class="tip-toggle" type="button">Vezi toate sfaturile</button>` : ""}`
+         <div class="tips-carousel" data-tips-count="${tips.length}">
+           <button class="tips-nav tips-prev" type="button" aria-label="Sfat anterior">←</button>
+           <div class="tips-card-container">${tipCards}</div>
+           <button class="tips-nav tips-next" type="button" aria-label="Sfat următor">→</button>
+         </div>
+         <div class="tips-dots">${tips.map((_, i) => `<button class="tips-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Sfat ${i + 1}"></button>`).join("")}</div>`
       : `<div class="section-heading compact">
            <p class="eyebrow">Sfaturi</p>
            <h3>Sfaturi utile</h3>
          </div>
          <div class="sidebar-empty">Nu exista sfaturi disponibile.</div>`;
+    tipsSidebar.dataset.currentTip = 0;
   }
 
   if (plan.flexibility) {
@@ -786,20 +796,67 @@ result.addEventListener("click", (event) => {
    toggle.textContent = card.classList.contains("expanded") ? "Ascunde" : "Vezi sugestii";
  });
 
- document.addEventListener("click", (event) => {
-   const flexCard = event.target.closest(".flexibility-full .flex-card");
-   if (flexCard && !event.target.closest(".flex-toggle")) {
-     flexCard.classList.toggle("expanded");
-   }
- });
-
 document.addEventListener("click", (event) => {
-    const tipToggle = event.target.closest(".tip-toggle");
-    if (tipToggle) {
-      const sidebar = tipToggle.closest(".sidebar-content");
-      sidebar.classList.toggle("tips-expanded");
-      tipToggle.textContent = sidebar.classList.contains("tips-expanded") ? "Ascunde sfaturi" : "Vezi toate sfaturile";
+    const flexCard = event.target.closest(".flexibility-full .flex-card");
+    if (flexCard && !event.target.closest(".flex-toggle")) {
+      flexCard.classList.toggle("expanded");
     }
+  });
+
+  document.addEventListener("click", (event) => {
+    const tipNav = event.target.closest(".tips-nav");
+    if (!tipNav) return;
+
+    const carousel = tipNav.closest(".tips-carousel");
+    const sidebar = carousel.closest(".sidebar-content");
+    const tips = sidebar.querySelectorAll(".tips-content");
+    const dots = sidebar.querySelectorAll(".tips-dot");
+    const counter = sidebar.querySelector(".tips-counter");
+    const tipsCount = parseInt(carousel.dataset.tipsCount);
+    let currentIndex = parseInt(sidebar.dataset.currentTip) || 0;
+
+    if (tipNav.classList.contains("tips-next")) {
+      currentIndex = (currentIndex + 1) % tipsCount;
+    } else {
+      currentIndex = (currentIndex - 1 + tipsCount) % tipsCount;
+    }
+
+    sidebar.dataset.currentTip = currentIndex;
+
+    const tipCards = sidebar.querySelectorAll(".tips-card");
+    tipCards.forEach((card, idx) => {
+      card.style.display = idx === currentIndex ? "block" : "none";
+    });
+
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle("active", idx === currentIndex);
+    });
+
+    counter.textContent = `Sfat ${currentIndex + 1} / ${tipsCount}`;
+  });
+
+  document.addEventListener("click", (event) => {
+    const tipDot = event.target.closest(".tips-dot");
+    if (!tipDot) return;
+
+    const sidebar = tipDot.closest(".sidebar-content");
+    const index = parseInt(tipDot.dataset.index);
+    const tipsCount = parseInt(sidebar.querySelector(".tips-carousel").dataset.tipsCount);
+    const counter = sidebar.querySelector(".tips-counter");
+    const dots = sidebar.querySelectorAll(".tips-dot");
+
+    sidebar.dataset.currentTip = index;
+
+    const tipCards = sidebar.querySelectorAll(".tips-card");
+    tipCards.forEach((card, idx) => {
+      card.style.display = idx === index ? "block" : "none";
+    });
+
+    dots.forEach((dot, idx) => {
+      dot.classList.toggle("active", idx === index);
+    });
+
+    counter.textContent = `Sfat ${index + 1} / ${tipsCount}`;
   });
 
   document.addEventListener("click", (event) => {

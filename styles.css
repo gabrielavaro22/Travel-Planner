@@ -676,56 +676,101 @@ textarea:focus {
     .budget-grid {
       grid-template-columns: 1fr;
     }
+}
+
+  .sidebar-empty {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.9rem;
   }
 
- .tips-checklist {
-   margin: 0;
-   padding-left: 0;
-   list-style: none;
- }
+  .tips-carousel {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
 
- .tip-item {
-   display: flex;
-   align-items: flex-start;
-   gap: 8px;
-   margin-bottom: 8px;
-   color: rgba(247, 247, 247, 0.8);
-   font-size: 0.9rem;
- }
+  .tips-nav {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 180ms ease;
+    flex-shrink: 0;
+  }
 
- .tip-item input[type="checkbox"] {
-   margin-top: 3px;
-   accent-color: var(--accent);
- }
+  .tips-nav:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
 
- .tips-checklist.tips-expanded {
-   display: block;
- }
+  .tips-nav:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
- .tip-toggle {
-   margin-top: 8px;
-   padding: 6px 12px;
-   border: 1px solid var(--accent);
-   border-radius: 6px;
-   background: transparent;
-   color: var(--accent);
-   font-size: 0.85rem;
-   cursor: pointer;
-   transition: all 180ms ease;
- }
+  .tips-card-container {
+    flex: 1;
+    overflow: hidden;
+  }
 
- .tip-toggle:hover {
-   background: var(--accent);
-   color: white;
- }
+  .tips-card {
+    min-height: 100px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+    box-shadow: var(--shadow);
+    transition: transform 240ms ease, opacity 240ms ease;
+  }
 
- .sidebar-empty {
-   margin-top: 8px;
-   color: var(--muted);
-   font-size: 0.9rem;
- }
+  .tips-counter {
+    margin-bottom: 8px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 
- .flexibility-full {
+  .tips-content {
+    color: var(--text);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .tips-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .tips-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: background 180ms ease;
+  }
+
+  .tips-dot.active,
+  .tips-dot:hover {
+    background: var(--accent);
+  }
+
+  .flexibility-full {
    grid-column: 1 / -1;
    margin-top: 18px;
    padding: 24px;
