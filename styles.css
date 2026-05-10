@@ -570,19 +570,113 @@ textarea:focus {
    padding: 18px;
  }
 
- .sidebar-content.compact {
-   padding: 14px;
- }
+.sidebar-content.compact {
+    padding: 14px;
+  }
 
- .budget-sidebar-content {
-   margin-top: 8px;
- }
+  .budget-dashboard {
+    display: grid;
+    gap: 12px;
+  }
 
- .budget-short {
-   margin: 0;
-   color: rgba(247, 247, 247, 0.85);
-   line-height: 1.5;
- }
+  .budget-summary {
+    margin-bottom: 8px;
+  }
+
+  .budget-amount {
+    color: var(--text);
+    font-size: 1.25rem;
+    font-weight: 800;
+  }
+
+  .budget-meta {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 2px;
+  }
+
+  .budget-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .budget-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface-strong);
+    transition: border-color 180ms ease, background 180ms ease;
+  }
+
+  .budget-item:hover {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .budget-icon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .budget-item-content h4 {
+    margin: 0 0 2px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 750;
+  }
+
+  .budget-item-content p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .budget-details-toggle {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 180ms ease;
+  }
+
+  .budget-details-toggle:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .budget-details {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    display: none;
+  }
+
+  .budget-details.expanded {
+    display: block;
+  }
+
+  @media (max-width: 640px) {
+    .budget-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 
  .tips-checklist {
    margin: 0;
@@ -1370,14 +1464,14 @@ body.pdf-mode-compact .timeline-step p {
  }
 
 .flexibility-info {
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.1);
-    font-size: 0.8rem;
-    color: rgba(247, 247, 247, 0.6);
-  }
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  font-size: 0.8rem;
+  color: rgba(247, 247, 247, 0.6);
+}
 
- .flexibility-info small {
-     display: block;
-     margin-bottom: 2px;
-   }
+.flexibility-info small {
+  display: block;
+  margin-bottom: 2px;
+}

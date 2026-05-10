@@ -466,22 +466,69 @@ result.className = "result-content";
      <div class="days-list">${dayCards}</div>
    `;
 
-  const budgetSidebar = document.getElementById("budget-sidebar");
+const budgetSidebar = document.getElementById("budget-sidebar");
   const tipsSidebar = document.getElementById("tips-sidebar");
-  if (budgetSidebar) {
-    budgetSidebar.innerHTML = plan.estimatedBudget
-      ? `<div class="section-heading compact">
-           <p class="eyebrow">Buget</p>
-           <h3>Buget estimat</h3>
-         </div>
-         <div class="budget-sidebar-content">
-           <p class="budget-short">${escapeHtml(plan.estimatedBudget)}</p>
-         </div>`
-      : `<div class="section-heading compact">
-           <p class="eyebrow">Buget</p>
-           <h3>Buget estimat</h3>
-         </div>
-         <div class="sidebar-empty">Nu exista informatii despre buget.</div>`;
+  if (plan.estimatedBudget) {
+    const budgetMatch = plan.estimatedBudget.match(/(\d+(?:\s*\d+)*(?:\.\d+)?)\s*(EUR|RON|USD|GBP)/i);
+    const budgetValue = budgetMatch ? budgetMatch[1].replace(/\s/g, '') : '';
+    const currency = budgetMatch ? budgetMatch[2].toUpperCase() : '';
+    const days = plan.days?.length || 1;
+    const perDay = budgetValue ? Math.round(parseFloat(budgetValue) / days) : 0;
+    
+    budgetSidebar.innerHTML = `
+      <div class="section-heading compact">
+        <p class="eyebrow">Buget</p>
+        <h3>Buget estimat</h3>
+      </div>
+      <div class="budget-dashboard">
+        <div class="budget-summary">
+          <div class="budget-amount">${budgetValue} ${currency}</div>
+          <div class="budget-meta">${days} zile · aprox. ${perDay} ${currency}/zi</div>
+        </div>
+        <div class="budget-grid">
+          <div class="budget-item">
+            <span class="budget-icon">🏨</span>
+            <div class="budget-item-content">
+              <h4>Cazare</h4>
+              <p>pensiuni, hosteluri sau B&B</p>
+            </div>
+          </div>
+          <div class="budget-item">
+            <span class="budget-icon">🚌</span>
+            <div class="budget-item-content">
+              <h4>Transport</h4>
+              <p>transport public și taxiuri partajate</p>
+            </div>
+          </div>
+          <div class="budget-item">
+            <span class="budget-icon">🍽️</span>
+            <div class="budget-item-content">
+              <h4>Mâncare</h4>
+              <p>local food, piețe, street food</p>
+            </div>
+          </div>
+          <div class="budget-item">
+            <span class="budget-icon">🛡️</span>
+            <div class="budget-item-content">
+              <h4>Rezervă</h4>
+              <p>păstrează 15–20% pentru neprevăzute</p>
+            </div>
+          </div>
+        </div>
+        <button class="budget-details-toggle" type="button">Vezi detalii buget</button>
+        <div class="budget-details">
+          <p class="budget-short">${escapeHtml(plan.estimatedBudget)}</p>
+        </div>
+      </div>
+    `;
+  } else {
+    budgetSidebar.innerHTML = `
+      <div class="section-heading compact">
+        <p class="eyebrow">Buget</p>
+        <h3>Buget estimat</h3>
+      </div>
+      <div class="sidebar-empty">Nu exista informatii despre buget.</div>
+    `;
   }
   if (tipsSidebar) {
     const visibleTips = plan.tips.slice(0, 4);
@@ -746,13 +793,22 @@ result.addEventListener("click", (event) => {
    }
  });
 
- document.addEventListener("click", (event) => {
-   const tipToggle = event.target.closest(".tip-toggle");
-   if (tipToggle) {
-     const sidebar = tipToggle.closest(".sidebar-content");
-     sidebar.classList.toggle("tips-expanded");
-     tipToggle.textContent = sidebar.classList.contains("tips-expanded") ? "Ascunde sfaturi" : "Vezi toate sfaturile";
-   }
- });
+document.addEventListener("click", (event) => {
+    const tipToggle = event.target.closest(".tip-toggle");
+    if (tipToggle) {
+      const sidebar = tipToggle.closest(".sidebar-content");
+      sidebar.classList.toggle("tips-expanded");
+      tipToggle.textContent = sidebar.classList.contains("tips-expanded") ? "Ascunde sfaturi" : "Vezi toate sfaturile";
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    const budgetToggle = event.target.closest(".budget-details-toggle");
+    if (budgetToggle) {
+      const details = budgetToggle.nextElementSibling;
+      details.classList.toggle("expanded");
+      budgetToggle.textContent = details.classList.contains("expanded") ? "Ascunde detalii" : "Vezi detalii buget";
+    }
+  });
 
 renderHistory();
