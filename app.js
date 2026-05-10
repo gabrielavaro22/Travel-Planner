@@ -616,7 +616,10 @@ if (plan.flexibility) {
         </div>
       </div>
     `;
-    result.parentNode.insertBefore(flexContainer, result.nextSibling);
+    const workspace = document.querySelector('.workspace');
+    if (workspace) {
+      workspace.parentNode.insertBefore(flexContainer, workspace.nextSibling);
+    }
   }
 }
 

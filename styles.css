@@ -770,7 +770,12 @@ textarea:focus {
     background: var(--accent);
   }
 
-.flexibility-full {
+  .tips-carousel {
+    max-height: 180px;
+    overflow: hidden;
+  }
+
+  .flexibility-full {
     grid-column: 1 / -1;
     margin-top: 24px;
     padding: 24px;
