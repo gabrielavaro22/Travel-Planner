@@ -238,35 +238,120 @@ function generateLocalTrip(payload) {
     ? payload.preferences.join(", ")
     : "un ritm echilibrat, cu obiective populare si pauze suficiente";
 
-  return {
-    source: "local",
-    title: `${payload.days} zile in ${destinationData?.name || payload.destination}`,
-    summary: destinationData
-      ? `Plan gratuit generat local pentru ${destinationData.name}, cu recomandari prioritizate dupa preferinte. Vacanta este de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}.`
-      : `Plan gratuit generat local pentru o vacanta de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}. Pentru aceasta destinatie folosim recomandari generale.`,
-    days: Array.from({ length: payload.days }, (_, index) =>
-      buildLocalDay(payload, index + 1, destinationData, dayPlans[index])
-    ),
-    recommendedLocations,
-    estimatedBudget: `Pentru bugetul de ${payload.budget}, recomand cazare simpla sau medie, transport public unde este disponibil, mese mixte intre localuri accesibile si cateva experiente speciale. Pastreaza aproximativ 10-15% din buget pentru cheltuieli neprevazute.`,
-    tips: [
-      "Verifica programul obiectivelor inainte de plecare, deoarece orele pot varia in functie de sezon.",
-      "Cumpara bilete online pentru atractiile populare ca sa eviti cozile.",
-      "Foloseste transportul public sau mersul pe jos pentru a controla costurile.",
-      "Pastreaza o copie digitala a documentelor si rezervarilor.",
-      "Lasa cel putin o activitate flexibila pe zi pentru vreme, oboseala sau descoperiri spontane."
-    ],
-    flexibility: {
-      rainyDayBackup: `Muzeul National, Centrul Comercial ${payload.destination} Mall, Cafenea Literara sau Restaurantul Tradițional pentru activități acoperite.`,
-      lowEnergyOptions: `Carturesti Carusel (cafenea cu carte), Conservatorul Botanic (${payload.destination}), Terasa Central sau Atelierul de Artizant pentru zile liniștite.`,
-      backupActivityPool: [
-        `Muzeul de Istorie Locala ${payload.destination}`,
-        `Centrul Comercial pentru cumparaturi si masa`,
-        `Cafenea cu atmosfera placuta din centru`,
-        `Biblioteca Municipală ${payload.destination}`
+    return {
+      source: "local",
+      title: `${payload.days} zile in ${destinationData?.name || payload.destination}`,
+      summary: destinationData
+        ? `Plan gratuit generat local pentru ${destinationData.name}, cu recomandari prioritizate dupa preferinte. Vacanta este de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}.`
+        : `Plan gratuit generat local pentru o vacanta de tip ${payload.vacationType}, cu buget de ${payload.budget} si preferinte: ${preferenceText}. Pentru aceasta destinatie folosim recomandari generale.`,
+      days: Array.from({ length: payload.days }, (_, index) =>
+        buildLocalDay(payload, index + 1, destinationData, dayPlans[index])
+      ),
+      recommendedLocations,
+      estimatedBudget: `Pentru bugetul de ${payload.budget}, recomand cazare simpla sau medie, transport public unde este disponibil, mese mixte intre localuri accesibile si cateva experiente speciale. Pastreaza aproximativ 10-15% din buget pentru cheltuieli neprevazute.`,
+      tips: [
+        "Verifica programul obiectivelor inainte de plecare, deoarece orele pot varia in functie de sezon.",
+        "Cumpara bilete online pentru atractiile populare ca sa eviti cozile.",
+        "Foloseste transportul public sau mersul pe jos pentru a controla costurile.",
+        "Pastreaza o copie digitala a documentelor si rezervarilor.",
+        "Lasa cel putin o activitate flexibila pe zi pentru vreme, oboseala sau descoperiri spontane."
       ],
-      extraTimeSuggestions: "Foloseste timpul suplimentar pentru vizite la Muzeul National, relaxare in Cafenea Literara sau explorare a cartierelor istorice."
+      flexibility: generateFlexibilitySuggestions(payload, destinationData)
+    };
+}
+
+function generateFlexibilitySuggestions(payload, destinationData) {
+  const destination = payload.destination || "orașul tau";
+  const destinationName = destinationData?.name || destination;
+  const days = payload.days?.length || 1;
+  const budgetValue = payload.budget?.match(/(\d+(?:\s*\d+)*(?:\.\d+)?)/i)?.[1].replace(/\s/g, '') || '500';
+  const currencyMatch = payload.budget?.match(/(\d+(?:\s*\d+)*(?:\.\d+)?)\s*(EUR|RON|USD|GBP)/i);
+  const currency = currencyMatch ? currencyMatch[2].toUpperCase() : 'EUR';
+  
+  // Parse preferences for more specific suggestions
+  const preferences = payload.preferences || [];
+  const vacationType = payload.vacationType || '';
+  
+  // Helper function to get destination-specific places
+  function getDestinationSpecific(placeType, genericName) {
+    if (destinationData && destinationData.locations && destinationData.locations.length > 0) {
+      // Try to find matching locations from our data
+      const matching = destinationData.locations.filter(loc => 
+        loc.category.toLowerCase().includes(placeType.toLowerCase()) || 
+        loc.name.toLowerCase().includes(placeType.toLowerCase())
+      );
+      if (matching.length > 0) {
+        return matching.slice(0, 3).map(loc => loc.name);
+      }
     }
+    // Return generic but destination-aware suggestions
+    return [`un ${placeType} local în ${destinationName}`];
+  }
+  
+  // Rainy day suggestions - indoor activities
+  const rainyDayBackup = [
+    ...getDestinationSpecific('muzeu', 'muzeu'),
+    ...getDestinationSpecific('galerie de artă', 'galerie'),
+    ...getDestinationSpecific('piață acoperită', 'piață acoperită'),
+    ...getDestinationSpecific('atelier culinar', 'atelier de gătit'),
+    ...getDestinationSpecific('spa urban', 'spa'),
+    ...getDestinationSpecific('centru de cultura', 'centru cultural'),
+    ...getDestinationSpecific('cinema', 'cinema'),
+    ...getDestinationSpecific('escape room', 'escape room')
+  ].slice(0, 3);
+  
+  // Low energy suggestions - relaxing activities
+  const lowEnergyOptions = [
+    `cafenea liniștită în zona centrală a ${destinationName}`,
+    `plimbare scurtă în parcul/localitatea apropiată de ${destinationName}`,
+    `cină la hotel/cazare (serviciu în cameră)`,
+    `viewpoint/ușor accesibil pentru relaxare în ${destinationName}`,
+    ...(vacationType.includes('spa') || preferences.includes('relaxare') ? [`spa/local de wellness în ${destinationName}`] : []),
+    `activitate scătoare de energie: lectură în bibliotecă locală`,
+    `seară liberă la hotel cu film sau joc de societate`
+  ].slice(0, 3);
+  
+  // Extra time suggestions - short activities
+  const extraTimeSuggestions = [
+    `explorare cartier istoric în ${destinationName}`,
+    `piață locală de produse tradiționale`,
+    `punct de vizitare pentru apus/landscape`,
+    `food stop la truck de street food local`,
+    `obiectiv secundar mai puțin cunoscut`,
+    `plimbare pe marginea râului/lacului din apropiere`,
+    `loc pentru foto cu panoramă urbană`,
+    `experiție locală rapidă: degustare vin/paștele locale`
+  ].slice(0, 3);
+  
+  // Backup pool - diverse alternatives for real problems
+  const backupActivityPool = [
+    // Atracție închisă
+    `alternativă similară la atracția anulată: ${getDestinationSpecific('muzeu', 'muzeu')[0] || `un alt muzeu în ${destinationName}`}`,
+    // Vreme schimbă
+    `activitate indoor pentru schimbare bruscă de vreme: ${getDestinationSpecific('galerie', 'galerie')[0] || `o galerii de artă în ${destinationName}`}`,
+    // Nu mai are energie
+    `opțiune de odihnă: ${getDestinationSpecific('parc', 'parc')[0] || `un parc verde în apropiere`}`,
+    // Transport durează prea mult
+    `activitate la distanță de mers: explorare cartier pe jos în raza de 1km`,
+    // Buget limitat
+    `activitate gratuitoare: ${getDestinationSpecific('piață', 'piață')[0] || `piață locală pentru observare`}`,
+    // Loc aglomerat
+    `alternativă mai puțin cunoscută: ${getDestinationSpecific('monument', 'monument')[0] || `monument/localitate istorică mai puțin turistată`}`,
+    // Vrea ceva spontan
+    `activitate spontană: explorare fără plan, cu ghid local recomandat de hotel`,
+    // Probleme tehnice
+    `soluanță tehnică: utilizarea aplicației locale de transport/public transport`,
+    // Obiectiv oversold
+    `alternativă la obiectiv populare: ${getDestinationSpecific('parc tematic', 'parc')[0] || `un parc/zoo local`}`,
+    // Schimbare de plan de ultima oră
+    `plan B de rezervă: activitate recomandată de personalul hotelului/hostelului`
+  ];
+  
+  return {
+    rainyDayBackup: rainyDayBackup.join(', '),
+    lowEnergyOptions: lowEnergyOptions.join(', '),
+    backupActivityPool: backupActivityPool,
+    extraTimeSuggestions: extraTimeSuggestions.join(', ')
   };
 }
 
@@ -788,13 +873,13 @@ clearHistoryButton.addEventListener("click", () => {
 });
 
 result.addEventListener("click", (event) => {
-   const toggle = event.target.closest(".flex-toggle");
-   if (!toggle) return;
+    const toggle = event.target.closest(".tip-toggle");
+    if (!toggle) return;
 
-   const card = toggle.closest(".flex-card");
-   card.classList.toggle("expanded");
-   toggle.textContent = card.classList.contains("expanded") ? "Ascunde" : "Vezi sugestii";
- });
+    const sidebar = toggle.closest(".sidebar-content");
+    sidebar.classList.toggle("tips-expanded");
+    toggle.textContent = sidebar.classList.contains("tips-expanded") ? "Ascunde sfaturi" : "Vezi toate sfaturile";
+  });
 
 document.addEventListener("click", (event) => {
     const tipNav = event.target.closest(".tips-nav");
