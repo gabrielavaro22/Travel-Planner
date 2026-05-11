@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Travel Planner</title>
+    <title>Travel Planner</title>
     <link rel="preconnect" href="https://images.unsplash.com" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -37,18 +37,18 @@
         <div class="workspace-main">
           <form class="planner-form" id="planner-form">
           <div class="section-heading">
-            <p class="eyebrow">Detaliile vacantei</p>
-            <h2>Spune-mi cum vrei sa calatoresti</h2>
+            <p class="eyebrow">Detaliile vacanței</p>
+            <h2>Spune-mi cum vrei să calatoresti</h2>
           </div>
 
           <label>
-            Destinatie
+            Destinație
             <input id="destination" name="destination" type="text" placeholder="Ex: Barcelona, Japonia, Roma" required />
           </label>
 
           <div class="form-grid">
             <label>
-              Numar de zile
+              Număr de zile
               <input id="days" name="days" type="number" min="1" max="30" value="5" required />
             </label>
 
@@ -59,7 +59,7 @@
           </div>
 
           <label>
-            Tipul vacantei
+            Tipul vacanței
             <select id="vacationType" name="vacationType" required>
               <option value="">Alege un tip</option>
               <option value="relaxare">Relaxare</option>
@@ -74,7 +74,7 @@
           </label>
 
           <fieldset>
-            <legend>Preferinte</legend>
+            <legend>Preferințe</legend>
             <div class="chips">
               <label><input type="checkbox" name="preferences" value="muzee" /> Muzee</label>
               <label><input type="checkbox" name="preferences" value="natura" /> Natura</label>
@@ -98,7 +98,7 @@
           <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
 
 <button class="primary-button" id="generate-button" type="submit">
-             Genereaza vacanta
+             Generează vacanța
            </button>
          </form>
 
@@ -111,10 +111,10 @@
         <section class="result-panel" aria-labelledby="result-title">
           <div class="section-heading compact">
             <p class="eyebrow">Itinerariu</p>
-            <h2 id="result-title">Planul tau apare aici</h2>
+            <h2 id="result-title">Planul tău apare aici</h2>
           </div>
           <div id="result" class="result-empty">
-            Completeaza formularul si genereaza o vacanta personalizata.
+            Completează formularul și generează o vacanța personalizată.
           </div>
         </section>
        </section>
@@ -131,9 +131,10 @@
       </section>
     </main>
 
-    <footer>
-      <p>AI Travel Planner genereaza itinerarii cu Gemini AI si pastreaza fallback local gratuit.</p>
-    </footer>
+<footer>
+   <p>AI Travel Planner genereaza itinerarii cu Gemini AI si pastreaza fallback local gratuit.</p>
+   <p>Developed by [nume]</p>
+</footer>
 
     <script src="destinations.js?v=gemini-2" defer></script>
     <script src="app.js?v=gemini-2" defer></script>
