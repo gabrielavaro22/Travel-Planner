@@ -576,7 +576,7 @@ textarea:focus {
 
   .budget-dashboard {
     display: grid;
-    gap: 12px;
+    gap: 16px;
   }
 
   .budget-summary {
@@ -604,10 +604,10 @@ textarea:focus {
   .budget-item {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    padding: 12px;
+    gap: 12px;
+    padding: 16px;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 10px;
     background: var(--surface-strong);
     transition: border-color 180ms ease, background 180ms ease;
   }
@@ -724,8 +724,8 @@ textarea:focus {
   }
 
   .tips-card {
-    min-height: 100px;
-    padding: 14px 16px;
+    min-height: 140px;
+    padding: 18px 20px;
     border: 1px solid var(--line);
     border-radius: 10px;
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
@@ -771,8 +771,10 @@ textarea:focus {
   }
 
   .tips-carousel {
-    max-height: 180px;
-    overflow: hidden;
+    /* Removed max-height constraint to allow cards to size based on content */
+    /* max-height: 180px; */
+    /* overflow: hidden; */
+    margin-top: 8px;
   }
 
   .flexibility-full {
@@ -792,7 +794,7 @@ textarea:focus {
 
   .flexibility-full .flex-card {
     position: relative;
-    min-height: 160px;
+    min-height: 200px;
     cursor: pointer;
     perspective: 1000px;
   }
