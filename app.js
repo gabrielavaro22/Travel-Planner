@@ -104,9 +104,6 @@ function scoreLocation(location, preferenceTags) {
 }
 
 async function getRecommendedLocations(payload, destinationData) {
-  // If we don't have destination data, return empty array
-  if (!destinationData) return [];
-
   try {
     // Call our Geoapify endpoint to get recommended locations
     const response = await fetch(`/api/geoapify?destination=${encodeURIComponent(payload.destination)}`);
@@ -117,21 +114,21 @@ async function getRecommendedLocations(payload, destinationData) {
       return getRecommendedLocationsFallback(payload, destinationData);
     }
     
-    const geoapifyLocations = await response.json();
+    const geoapifyData = await response.json();
+    const geoapifyLocations = Array.isArray(geoapifyData) ? geoapifyData : geoapifyData.places || [];
     
     // Transform Geoapify data to match expected format
     return geoapifyLocations.map(location => ({
       name: location.name,
       category: location.category,
-      // For compatibility with existing code, we'll use a default priority
-      // and calculate a basic score based on distance (closer = higher score)
-      priority: 1, // Default priority
+      address: location.address,
+      distance: location.distance,
+      priority: 1,
       score: Math.max(0, 100 - Math.min(location.distance / 50, 100)), // Score based on distance (0-5000m)
       mapUrl: location.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.name} ${payload.destination}`)}`
     }));
   } catch (error) {
     console.error('Error fetching Geoapify data:', error);
-    // Fallback to local data
     return getRecommendedLocationsFallback(payload, destinationData);
   }
 }
@@ -167,13 +164,15 @@ function categoryLabel(location) {
 }
 
 function splitLocationsByDay(locations, days) {
-  const queue = [...locations];
+   // Ensure we always work with an array
+   const locArray = Array.isArray(locations) ? locations : [];
+   const queue = [...locArray];
 
-  return Array.from({ length: days }, () => ({
-    morning: queue.shift(),
-    afternoon: queue.shift(),
-    evening: queue.shift()
-  }));
+   return Array.from({ length: days }, () => ({
+     morning: queue.shift(),
+     afternoon: queue.shift(),
+     evening: queue.shift()
+   }));
 }
 
 function generateRainyDayOptions(payload, dayNumber) {
@@ -264,9 +263,9 @@ const selectedTheme = pickByPreference(payload, themes);
   };
 }
 
-function generateLocalTrip(payload) {
+async function generateLocalTrip(payload) {
   const destinationData = getDestinationData(payload.destination);
-  const recommendedLocations = getRecommendedLocations(payload, destinationData);
+  const recommendedLocations = await getRecommendedLocations(payload, destinationData);
   const dayPlans = splitLocationsByDay(recommendedLocations, payload.days);
   const preferenceText = payload.preferences.length
     ? payload.preferences.join(", ")
@@ -791,7 +790,7 @@ function renderHistory() {
 }
 
 async function generateTrip(payload) {
-  const localPlan = generateLocalTrip(payload);
+  const localPlan = await generateLocalTrip(payload);
 
   try {
     const response = await fetch("/api/generate-trip", {

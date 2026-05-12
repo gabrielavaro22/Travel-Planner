@@ -33,6 +33,7 @@ function loadEnvFile() {
 loadEnvFile();
 
 const generateTrip = require("../api/generate-trip");
+const geoapify = require("../api/geoapify");
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -96,6 +97,15 @@ async function handleApi(request, response) {
   }
 }
 
+async function handleGeoapify(request, response) {
+  try {
+    await geoapify(request, createVercelResponse(response));
+  } catch (error) {
+    response.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: error.message }));
+  }
+}
+
 function sendStatic(request, response) {
   const requestUrl = new URL(request.url, `http://${request.headers.host}`);
   const requestedPath = requestUrl.pathname === "/" ? "/index.html" : requestUrl.pathname;
@@ -124,6 +134,11 @@ function sendStatic(request, response) {
 const server = http.createServer((request, response) => {
   if (request.url.startsWith("/api/generate-trip")) {
     handleApi(request, response);
+    return;
+  }
+
+  if (request.url.startsWith("/api/geoapify")) {
+    handleGeoapify(request, response);
     return;
   }
 

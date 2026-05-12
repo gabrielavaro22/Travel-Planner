@@ -1109,6 +1109,30 @@ textarea:focus {
   padding: 12px;
   background: var(--surface-strong);
   text-decoration: none;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.location-card:hover {
+  border-color: var(--accent);
+}
+
+.location-card span {
+  display: block;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.location-card small {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.location-card small + small {
+  color: var(--accent-dark);
+  font-weight: 750;
 }
 
 .location-card:hover {
