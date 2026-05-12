@@ -6,6 +6,11 @@ const result = document.querySelector("#result");
 const generateButton = document.querySelector("#generate-button");
 const historyList = document.querySelector("#history-list");
 const clearHistoryButton = document.querySelector("#clear-history");
+const weatherStartInput = document.querySelector("#weather-start");
+const weatherEndInput = document.querySelector("#weather-end");
+const weatherCheckButton = document.querySelector("#weather-check");
+const weatherMessage = document.querySelector("#weather-message");
+const weatherResult = document.querySelector("#weather-result");
 
 let currentPlan = null;
 
@@ -819,6 +824,246 @@ async function generateTrip(payload) {
   }
 }
 
+function formatDateForInput(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateInput(value) {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date, days) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function getDayDifference(startDate, endDate) {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  return Math.round((end - start) / msPerDay);
+}
+
+function setWeatherMessage(text, type = "error") {
+  if (!weatherMessage) return;
+  weatherMessage.textContent = text;
+  weatherMessage.classList.toggle("success", type === "success");
+}
+
+function clearWeatherState() {
+  setWeatherMessage("");
+  if (weatherResult) {
+    weatherResult.innerHTML = "";
+  }
+}
+
+function syncWeatherDefaultDates() {
+  if (!weatherStartInput || !weatherEndInput) return;
+
+  const today = new Date();
+  const todayText = formatDateForInput(today);
+  const daysInput = form.querySelector("#days");
+  const tripDays = Math.max(1, Math.min(Number(daysInput?.value) || 3, 16));
+  const endDate = formatDateForInput(addDays(today, tripDays - 1));
+
+  weatherStartInput.min = todayText;
+  weatherEndInput.min = weatherStartInput.value || todayText;
+
+  if (!weatherStartInput.value) {
+    weatherStartInput.value = todayText;
+  }
+
+  if (!weatherEndInput.value) {
+    weatherEndInput.value = endDate;
+  }
+}
+
+function getWeatherInfo(code) {
+  const weatherMap = {
+    0: { icon: "☀️", label: "Soare" },
+    1: { icon: "⛅", label: "Mai mult soare" },
+    2: { icon: "⛅", label: "Partial noros" },
+    3: { icon: "☁️", label: "Noros" },
+    45: { icon: "🌫", label: "Ceata" },
+    48: { icon: "🌫", label: "Ceata" },
+    51: { icon: "🌧", label: "Burnita" },
+    53: { icon: "🌧", label: "Burnita" },
+    55: { icon: "🌧", label: "Burnita intensa" },
+    56: { icon: "🌧", label: "Ploaie rece" },
+    57: { icon: "🌧", label: "Ploaie rece" },
+    61: { icon: "🌧", label: "Ploaie usoara" },
+    63: { icon: "🌧", label: "Ploaie" },
+    65: { icon: "🌧", label: "Ploaie intensa" },
+    66: { icon: "🌧", label: "Ploaie rece" },
+    67: { icon: "🌧", label: "Ploaie rece intensa" },
+    71: { icon: "❄️", label: "Ninsoare usoara" },
+    73: { icon: "❄️", label: "Ninsoare" },
+    75: { icon: "❄️", label: "Ninsoare intensa" },
+    77: { icon: "❄️", label: "Fulguieli" },
+    80: { icon: "🌧", label: "Averse usoare" },
+    81: { icon: "🌧", label: "Averse" },
+    82: { icon: "🌧", label: "Averse intense" },
+    85: { icon: "❄️", label: "Averse de ninsoare" },
+    86: { icon: "❄️", label: "Ninsoare intensa" },
+    95: { icon: "⛈", label: "Furtuna" },
+    96: { icon: "⛈", label: "Furtuna cu grindina" },
+    99: { icon: "⛈", label: "Furtuna puternica" }
+  };
+
+  return weatherMap[Number(code)] || { icon: "⛅", label: "Vreme variabila" };
+}
+
+function isRainyWeather(code, precipitation, probability) {
+  const rainyCodes = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]);
+  return rainyCodes.has(Number(code)) || Number(precipitation) > 0.5 || Number(probability) >= 40;
+}
+
+async function geocodeWeatherDestination(destination) {
+  const params = new URLSearchParams({
+    name: destination,
+    count: "5",
+    language: "ro",
+    format: "json"
+  });
+
+  const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params.toString()}`);
+  if (!response.ok) throw new Error("Nu am gasit coordonatele destinatiei.");
+
+  const data = await response.json();
+  const results = data.results || [];
+  if (!results.length) throw new Error("Nu am gasit prognoza pentru aceasta destinatie.");
+
+  return results
+    .slice()
+    .sort((a, b) => (b.population || 0) - (a.population || 0))[0];
+}
+
+async function fetchWeatherForecast(destination, startDate, endDate) {
+  const place = await geocodeWeatherDestination(destination);
+  const params = new URLSearchParams({
+    latitude: String(place.latitude),
+    longitude: String(place.longitude),
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max",
+    timezone: "auto",
+    start_date: startDate,
+    end_date: endDate
+  });
+
+  const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
+  if (!response.ok) throw new Error("Nu am putut incarca prognoza meteo.");
+
+  const data = await response.json();
+  if (!data.daily?.time?.length) {
+    throw new Error("Nu exista prognoza pentru perioada aleasa.");
+  }
+
+  return {
+    place,
+    days: data.daily.time.map((date, index) => ({
+      date,
+      weatherCode: data.daily.weather_code?.[index],
+      max: data.daily.temperature_2m_max?.[index],
+      min: data.daily.temperature_2m_min?.[index],
+      precipitation: data.daily.precipitation_sum?.[index],
+      probability: data.daily.precipitation_probability_max?.[index]
+    }))
+  };
+}
+
+function formatWeatherDate(dateText) {
+  const date = parseDateInput(dateText);
+  if (!date) return dateText;
+
+  return date.toLocaleDateString("ro-RO", {
+    day: "numeric",
+    month: "short"
+  });
+}
+
+function renderWeatherForecast(forecast) {
+  const hasRain = forecast.days.some((day) => isRainyWeather(day.weatherCode, day.precipitation, day.probability));
+  const locationLabel = [forecast.place.name, forecast.place.country].filter(Boolean).join(", ");
+
+  weatherResult.innerHTML = `
+    <div class="weather-location">Prognoza pentru ${escapeHtml(locationLabel)}</div>
+    ${hasRain ? `<div class="weather-alert">Exista sanse de ploaie. Verifica Plan B & Flexibilitate.</div>` : ""}
+    <div class="weather-days">
+      ${forecast.days.map((day) => {
+        const info = getWeatherInfo(day.weatherCode);
+        const rainy = isRainyWeather(day.weatherCode, day.precipitation, day.probability);
+        const max = Number.isFinite(Number(day.max)) ? Math.round(day.max) : "-";
+        const min = Number.isFinite(Number(day.min)) ? Math.round(day.min) : "-";
+
+        return `
+          <article class="weather-day-card">
+            <span class="weather-date">${escapeHtml(formatWeatherDate(day.date))}</span>
+            <span class="weather-day-icon" aria-hidden="true">${info.icon}</span>
+            <strong>${max}° / ${min}°</strong>
+            <span>${escapeHtml(info.label)}</span>
+            ${rainy ? `<small class="weather-badge">Plan B recomandat</small>` : ""}
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+async function handleWeatherCheck() {
+  const payload = getFormData();
+  const startDate = parseDateInput(weatherStartInput?.value);
+  const endDate = parseDateInput(weatherEndInput?.value);
+  const today = new Date();
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  clearWeatherState();
+
+  if (!payload.destination) {
+    setWeatherMessage("Introdu mai intai o destinatie.");
+    return;
+  }
+
+  if (!startDate || !endDate) {
+    setWeatherMessage("Alege data de inceput si data de final.");
+    return;
+  }
+
+  if (endDate < startDate) {
+    setWeatherMessage("Data de final trebuie sa fie dupa data de inceput.");
+    return;
+  }
+
+  if (getDayDifference(todayDate, startDate) > 15 || getDayDifference(todayDate, endDate) > 15) {
+    setWeatherMessage("Prognoza este disponibila doar pentru urmatoarele aproximativ 16 zile.");
+    return;
+  }
+
+  weatherCheckButton.disabled = true;
+  weatherCheckButton.textContent = "Se verifica...";
+  setWeatherMessage("Caut prognoza meteo...", "success");
+
+  try {
+    const forecast = await fetchWeatherForecast(
+      payload.destination,
+      formatDateForInput(startDate),
+      formatDateForInput(endDate)
+    );
+    renderWeatherForecast(forecast);
+    setWeatherMessage("");
+  } catch (error) {
+    setWeatherMessage(error.message || "Nu am putut verifica vremea acum.");
+  } finally {
+    weatherCheckButton.disabled = false;
+    weatherCheckButton.textContent = "Verifica vremea";
+  }
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -995,5 +1240,19 @@ document.addEventListener("click", (event) => {
     if (!flexCard || event.target.closest(".flex-card-back")) return;
     flexCard.classList.toggle("flipped");
   });
+
+if (weatherCheckButton) {
+  syncWeatherDefaultDates();
+  weatherCheckButton.addEventListener("click", handleWeatherCheck);
+  form.querySelector("#days")?.addEventListener("change", syncWeatherDefaultDates);
+  weatherStartInput?.addEventListener("change", () => {
+    if (weatherEndInput && weatherStartInput.value) {
+      weatherEndInput.min = weatherStartInput.value;
+      if (weatherEndInput.value < weatherStartInput.value) {
+        weatherEndInput.value = weatherStartInput.value;
+      }
+    }
+  });
+}
 
 renderHistory();

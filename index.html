@@ -100,6 +100,34 @@
 <button class="primary-button" id="generate-button" type="submit">
              Generează vacanța
            </button>
+          <section class="weather-widget" aria-labelledby="weather-title">
+            <div class="weather-widget-header">
+              <span class="weather-widget-icon" aria-hidden="true">🌦</span>
+              <div>
+                <h3 id="weather-title">Vremea pentru vacanta</h3>
+                <p>Verifica rapid prognoza pentru perioada aleasa.</p>
+              </div>
+            </div>
+
+            <div class="weather-fields">
+              <label>
+                Data de inceput
+                <input id="weather-start" type="date" />
+              </label>
+
+              <label>
+                Data de final
+                <input id="weather-end" type="date" />
+              </label>
+            </div>
+
+            <button class="weather-button" id="weather-check" type="button">
+              Verifica vremea
+            </button>
+
+            <p class="weather-message" id="weather-message" role="status" aria-live="polite"></p>
+            <div class="weather-result" id="weather-result" aria-live="polite"></div>
+          </section>
          </form>
 
 <aside class="sidebar-panel" aria-label="Informatii aditionale">
