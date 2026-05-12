@@ -20,12 +20,20 @@
     {
       "src": "api/generate-trip.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/geoapify.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/generate-trip",
       "dest": "/api/generate-trip.js"
+    },
+    {
+      "src": "/api/geoapify",
+      "dest": "/api/geoapify.js"
     },
     {
       "src": "/styles.css",

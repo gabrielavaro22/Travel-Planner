@@ -103,7 +103,41 @@ function scoreLocation(location, preferenceTags) {
   return location.priority + tagScore + categoryScore;
 }
 
-function getRecommendedLocations(payload, destinationData) {
+async function getRecommendedLocations(payload, destinationData) {
+  // If we don't have destination data, return empty array
+  if (!destinationData) return [];
+
+  try {
+    // Call our Geoapify endpoint to get recommended locations
+    const response = await fetch(`/api/geoapify?destination=${encodeURIComponent(payload.destination)}`);
+    
+    if (!response.ok) {
+      // Fallback to local data if Geoapify fails
+      console.warn('Geoapify API failed, falling back to local data');
+      return getRecommendedLocationsFallback(payload, destinationData);
+    }
+    
+    const geoapifyLocations = await response.json();
+    
+    // Transform Geoapify data to match expected format
+    return geoapifyLocations.map(location => ({
+      name: location.name,
+      category: location.category,
+      // For compatibility with existing code, we'll use a default priority
+      // and calculate a basic score based on distance (closer = higher score)
+      priority: 1, // Default priority
+      score: Math.max(0, 100 - Math.min(location.distance / 50, 100)), // Score based on distance (0-5000m)
+      mapUrl: location.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.name} ${payload.destination}`)}`
+    }));
+  } catch (error) {
+    console.error('Error fetching Geoapify data:', error);
+    // Fallback to local data
+    return getRecommendedLocationsFallback(payload, destinationData);
+  }
+}
+
+// Keep the original function as fallback
+function getRecommendedLocationsFallback(payload, destinationData) {
   if (!destinationData) return [];
 
   const preferenceTags = getPreferenceTags(payload);
@@ -491,17 +525,26 @@ function renderTrip(plan) {
   ]
     .map((item) => `<li>${escapeHtml(item)}</li>`)
     .join("");
-  const recommendations = (plan.recommendedLocations || [])
-    .map(
-      (location) => `
+const recommendations = (plan.recommendedLocations || [])
+  .map(
+    (location) => {
+      // Format distance if available
+      const distanceText = location.distance !== undefined 
+        ? ` • ${location.distance < 1000 ? Math.round(location.distance) + ' m' : (location.distance / 1000).toFixed(1) + ' km'}` 
+        : '';
+      
+      return `
         <a class="location-card" href="${escapeHtml(location.mapUrl)}" target="_blank" rel="noreferrer">
           <span>${escapeHtml(location.name)}</span>
-          <small>${escapeHtml(location.category)} - scor ${escapeHtml(location.score)}</small>
+          <small>${escapeHtml(location.category)}</small>
+          ${location.address ? `<br><small>${escapeHtml(location.address)}</small>` : ''}
+          ${distanceText}
           <small>Vezi pe harta</small>
         </a>
-      `
-    )
-    .join("");
+      `;
+    }
+  )
+  .join("");
   const sourceText = plan.source === "gemini" ? "Gemini AI" : "Fallback local";
   const dayCount = Array.isArray(plan.days) ? plan.days.length : 0;
   const locationCount = Array.isArray(plan.recommendedLocations) ? plan.recommendedLocations.length : 0;
