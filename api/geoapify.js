@@ -50,6 +50,60 @@ async function fetchJson(url) {
   return response.json();
 }
 
+function normalizeText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function scoreDestinationFeature(feature, destination) {
+  const properties = feature.properties || {};
+  const query = normalizeText(destination);
+  const formatted = normalizeText(properties.formatted);
+  const name = normalizeText(properties.name);
+  const country = normalizeText(properties.country);
+  const resultType = properties.result_type || "";
+  const rank = properties.rank || {};
+
+  let score = 0;
+
+  if (country === query) score += 120;
+  if (name === query) score += 80;
+  if (formatted === query || formatted.startsWith(`${query} `)) score += 35;
+
+  const typeScores = {
+    country: 90,
+    state: 45,
+    county: 10,
+    city: 55,
+    municipality: 35,
+    district: 5,
+    suburb: 0,
+    street: -40,
+    amenity: -50,
+    postcode: -60
+  };
+
+  score += typeScores[resultType] ?? 0;
+  score += Math.round((rank.confidence || 0) * 25);
+  score += Math.round((rank.popularity || 0) * 10);
+
+  if (formatted.includes("united states") && !query.includes("united states") && !query.includes("usa")) {
+    score -= 35;
+  }
+
+  return score;
+}
+
+function selectDestinationFeature(features = [], destination) {
+  return [...features].sort(
+    (a, b) => scoreDestinationFeature(b, destination) - scoreDestinationFeature(a, destination)
+  )[0];
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -77,9 +131,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&limit=1&apiKey=${encodeURIComponent(apiKey)}`;
+    const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&limit=8&apiKey=${encodeURIComponent(apiKey)}`;
     const geocodeData = await fetchJson(geocodeUrl);
-    const center = geocodeData.features?.[0]?.properties;
+    const selectedFeature = selectDestinationFeature(geocodeData.features || [], destination);
+    const center = selectedFeature?.properties;
 
     if (!center?.lon || !center?.lat) {
       return sendJson(res, 404, { error: "Destinatia nu a fost gasita." });
