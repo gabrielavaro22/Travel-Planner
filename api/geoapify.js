@@ -50,6 +50,43 @@ async function fetchJson(url) {
   return response.json();
 }
 
+async function fetchGeocodeCandidates(destination, apiKey) {
+  const queries = [destination];
+  const looksAmbiguous = !destination.includes(",") && destination.split(/\s+/).length <= 2;
+
+  if (looksAmbiguous) {
+    queries.push(`${destination} country`, `${destination} island`);
+  }
+
+  const responses = await Promise.all(
+    queries.map(async (query) => {
+      const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&limit=8&apiKey=${encodeURIComponent(apiKey)}`;
+
+      try {
+        return await fetchJson(geocodeUrl);
+      } catch {
+        return { features: [] };
+      }
+    })
+  );
+
+  const seen = new Set();
+
+  return responses
+    .flatMap((response) => response.features || [])
+    .filter((feature) => {
+      const properties = feature.properties || {};
+      const key = `${properties.lat},${properties.lon},${properties.formatted}`;
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+}
+
 function normalizeText(value) {
   return String(value || "")
     .toLowerCase()
@@ -131,9 +168,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const geocodeUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&limit=8&apiKey=${encodeURIComponent(apiKey)}`;
-    const geocodeData = await fetchJson(geocodeUrl);
-    const selectedFeature = selectDestinationFeature(geocodeData.features || [], destination);
+    const geocodeFeatures = await fetchGeocodeCandidates(destination, apiKey);
+    const selectedFeature = selectDestinationFeature(geocodeFeatures, destination);
     const center = selectedFeature?.properties;
 
     if (!center?.lon || !center?.lat) {
