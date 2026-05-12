@@ -2267,6 +2267,158 @@ a:focus-visible {
   font-weight: 780;
 }
 
+.destination-photo-carousel {
+  margin: 18px 0;
+  border: 1px solid rgba(28, 167, 201, 0.14);
+  border-radius: 14px;
+  padding: clamp(14px, 2vw, 18px);
+  background:
+    linear-gradient(135deg, rgba(238, 248, 255, 0.94), rgba(255, 250, 242, 0.96)),
+    #ffffff;
+  box-shadow: var(--card-shadow);
+}
+
+.destination-photo-carousel[hidden] {
+  display: none;
+}
+
+.destination-photo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.destination-photo-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.08rem, 2vw, 1.35rem);
+}
+
+.destination-photo-controls {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.photo-nav {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(255, 107, 74, 0.28);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--accent-dark);
+  font: inherit;
+  font-size: 1.35rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(43, 69, 88, 0.1);
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.photo-nav:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.destination-photo-track {
+  display: grid;
+  grid-auto-columns: minmax(240px, 58%);
+  grid-auto-flow: column;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 2px 2px 12px;
+  scroll-snap-type: x mandatory;
+  scrollbar-color: var(--accent) rgba(18, 38, 58, 0.12);
+  scrollbar-width: thin;
+}
+
+.destination-photo-card {
+  position: relative;
+  min-height: clamp(210px, 28vw, 320px);
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--surface-strong);
+  box-shadow: 0 16px 34px rgba(43, 69, 88, 0.15);
+  scroll-snap-align: start;
+}
+
+.destination-photo-card img {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  display: block;
+  object-fit: cover;
+  transition: transform 240ms ease;
+}
+
+.destination-photo-card:hover img {
+  transform: scale(1.04);
+}
+
+.destination-photo-overlay {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  gap: 3px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(18, 38, 58, 0.68);
+  color: #ffffff;
+  backdrop-filter: blur(10px);
+}
+
+.destination-photo-overlay strong {
+  font-size: 0.96rem;
+  line-height: 1.15;
+}
+
+.destination-photo-overlay a {
+  width: fit-content;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.destination-photo-overlay a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.destination-photo-dots {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  padding-top: 2px;
+}
+
+.photo-dot {
+  width: 8px;
+  height: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(18, 38, 58, 0.18);
+  cursor: pointer;
+  transition:
+    width 180ms ease,
+    background 180ms ease;
+}
+
+.photo-dot.active,
+.photo-dot:hover {
+  width: 22px;
+  background: var(--accent);
+}
+
 .day-card {
   background: #ffffff;
 }
@@ -2316,12 +2468,30 @@ footer {
   .topbar {
     background: rgba(255, 253, 248, 0.94);
   }
+
+  .destination-photo-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .destination-photo-controls {
+    align-self: flex-end;
+  }
+
+  .destination-photo-track {
+    grid-auto-columns: minmax(230px, 86%);
+  }
+
+  .destination-photo-card {
+    min-height: 220px;
+  }
 }
 
 @media print {
   .sidebar-panel,
   .sidebar-content,
-  .flexibility-full {
+  .flexibility-full,
+  .destination-photo-carousel {
     display: none !important;
   }
 }

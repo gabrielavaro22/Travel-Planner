@@ -24,6 +24,10 @@
     {
       "src": "api/geoapify.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/pexels.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -34,6 +38,10 @@
     {
       "src": "/api/geoapify",
       "dest": "/api/geoapify.js"
+    },
+    {
+      "src": "/api/pexels",
+      "dest": "/api/pexels.js"
     },
     {
       "src": "/styles.css",

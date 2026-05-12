@@ -477,6 +477,7 @@ async function copyTextToClipboard(text) {
 
 function renderTrip(plan) {
   currentPlan = plan;
+  const destination = plan.displayDestination || plan.destination || "";
   const dayCards = plan.days
     .map((day) => {
       const activities = [
@@ -587,6 +588,7 @@ result.className = "result-content";
            </div>
          </div>
      </div>
+     <section class="destination-photo-carousel" id="destination-photo-carousel" hidden></section>
      ${
        recommendations
          ? `
@@ -599,6 +601,8 @@ result.className = "result-content";
      }
      <div class="days-list">${dayCards}</div>
    `;
+
+  loadDestinationPhotos(destination);
 
 const budgetSidebar = document.getElementById("budget-sidebar");
   const tipsSidebar = document.getElementById("tips-sidebar");
@@ -755,6 +759,91 @@ if (plan.flexibility) {
       workspace.parentNode.insertBefore(flexContainer, workspace.nextSibling);
     }
   }
+}
+
+async function fetchDestinationPhotos(destination) {
+  if (!destination) return [];
+
+  const response = await fetch(`/api/pexels?destination=${encodeURIComponent(destination)}`);
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = await response.json();
+  return Array.isArray(data.photos) ? data.photos.filter((photo) => photo.src) : [];
+}
+
+function renderDestinationPhotos(destination, photos) {
+  const carousel = document.querySelector("#destination-photo-carousel");
+  if (!carousel || !photos.length) return;
+
+  carousel.hidden = false;
+  carousel.innerHTML = `
+    <div class="destination-photo-header">
+      <div>
+        <p class="eyebrow">Galerie foto</p>
+        <h3>Imagini din ${escapeHtml(destination)}</h3>
+      </div>
+      <div class="destination-photo-controls" aria-label="Control carousel imagini">
+        <button class="photo-nav" type="button" data-photo-direction="-1" aria-label="Imaginea anterioara">‹</button>
+        <button class="photo-nav" type="button" data-photo-direction="1" aria-label="Imaginea urmatoare">›</button>
+      </div>
+    </div>
+    <div class="destination-photo-track" tabindex="0" aria-label="Imagini reale pentru ${escapeHtml(destination)}">
+      ${photos.map((photo, index) => `
+        <article class="destination-photo-card" data-photo-index="${index}">
+          <img src="${escapeHtml(photo.src)}" alt="${escapeHtml(photo.alt || `Imagine din ${destination}`)}" loading="lazy" />
+          <div class="destination-photo-overlay">
+            <strong>${escapeHtml(destination)}</strong>
+            ${
+              photo.photographer && photo.pexelsUrl
+                ? `<a href="${escapeHtml(photo.pexelsUrl)}" target="_blank" rel="noreferrer">Photo by ${escapeHtml(photo.photographer)} on Pexels</a>`
+                : ""
+            }
+          </div>
+        </article>
+      `).join("")}
+    </div>
+    <div class="destination-photo-dots" aria-label="Indicatori carousel">
+      ${photos.map((_, index) => `
+        <button class="photo-dot ${index === 0 ? "active" : ""}" type="button" data-photo-index="${index}" aria-label="Mergi la imaginea ${index + 1}"></button>
+      `).join("")}
+    </div>
+  `;
+}
+
+async function loadDestinationPhotos(destination) {
+  const carousel = document.querySelector("#destination-photo-carousel");
+  if (!carousel) return;
+
+  carousel.hidden = true;
+  carousel.innerHTML = "";
+
+  try {
+    const photos = await fetchDestinationPhotos(destination);
+    renderDestinationPhotos(destination, photos);
+  } catch {
+    carousel.hidden = true;
+    carousel.innerHTML = "";
+  }
+}
+
+function updatePhotoDots(carousel) {
+  const track = carousel.querySelector(".destination-photo-track");
+  const cards = [...carousel.querySelectorAll(".destination-photo-card")];
+  const dots = carousel.querySelectorAll(".photo-dot");
+  if (!track || !cards.length || !dots.length) return;
+
+  const activeIndex = cards.reduce((closestIndex, card, index) => {
+    const currentDistance = Math.abs(card.offsetLeft - track.scrollLeft);
+    const closestDistance = Math.abs(cards[closestIndex].offsetLeft - track.scrollLeft);
+    return currentDistance < closestDistance ? index : closestIndex;
+  }, 0);
+
+  dots.forEach((dot, index) => {
+    dot.classList.toggle("active", index === activeIndex);
+  });
 }
 
 function addTripToHistory(plan, request) {
@@ -1081,7 +1170,7 @@ form.addEventListener("submit", async (event) => {
 
   try {
     const plan = await generateTrip(payload);
-    renderTrip(plan);
+    renderTrip({ ...plan, displayDestination: payload.destination });
     addTripToHistory(plan, payload);
     setMessage("Itinerariul a fost generat si salvat in istoric.", "success");
   } catch (error) {
@@ -1101,13 +1190,13 @@ historyList.addEventListener("click", (event) => {
   if (!item) return;
 
 if (button.dataset.action === "open") {
-     renderTrip(item.plan);
+     renderTrip({ ...item.plan, displayDestination: item.request.destination });
      window.location.hash = "planner";
      setMessage("Itinerariul salvat a fost deschis.", "success");
    }
 
    if (button.dataset.action === "export-pdf-history") {
-     renderTrip(item.plan);
+     renderTrip({ ...item.plan, displayDestination: item.request.destination });
      setTimeout(() => {
        const mode = "detailed";
        document.body.classList.add(`pdf-mode-${mode}`);
@@ -1240,6 +1329,45 @@ document.addEventListener("click", (event) => {
     if (!flexCard || event.target.closest(".flex-card-back")) return;
     flexCard.classList.toggle("flipped");
   });
+
+document.addEventListener("click", (event) => {
+  const nav = event.target.closest(".photo-nav");
+  if (nav) {
+    const carousel = nav.closest(".destination-photo-carousel");
+    const track = carousel?.querySelector(".destination-photo-track");
+    if (!track) return;
+
+    track.scrollBy({
+      left: Number(nav.dataset.photoDirection || 1) * track.clientWidth * 0.86,
+      behavior: "smooth"
+    });
+    setTimeout(() => updatePhotoDots(carousel), 320);
+    return;
+  }
+
+  const dot = event.target.closest(".photo-dot");
+  if (dot) {
+    const carousel = dot.closest(".destination-photo-carousel");
+    const track = carousel?.querySelector(".destination-photo-track");
+    const card = carousel?.querySelector(`.destination-photo-card[data-photo-index="${dot.dataset.photoIndex}"]`);
+    if (!track || !card) return;
+
+    track.scrollTo({
+      left: card.offsetLeft,
+      behavior: "smooth"
+    });
+    carousel.querySelectorAll(".photo-dot").forEach((item) => {
+      item.classList.toggle("active", item === dot);
+    });
+  }
+});
+
+document.addEventListener("scroll", (event) => {
+  const track = event.target.closest?.(".destination-photo-track");
+  if (!track) return;
+  const carousel = track.closest(".destination-photo-carousel");
+  window.requestAnimationFrame(() => updatePhotoDots(carousel));
+}, true);
 
 if (weatherCheckButton) {
   syncWeatherDefaultDates();
