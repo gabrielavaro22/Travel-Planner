@@ -527,17 +527,19 @@ function renderTrip(plan) {
 const recommendations = (plan.recommendedLocations || [])
   .map(
     (location) => {
-      // Format distance if available
-      const distanceText = location.distance !== undefined 
-        ? ` • ${location.distance < 1000 ? Math.round(location.distance) + ' m' : (location.distance / 1000).toFixed(1) + ' km'}` 
+      const distanceText = location.distance !== undefined
+        ? `Distanta fata de centru: ${
+            location.distance < 1000
+              ? Math.round(location.distance) + " m"
+              : (location.distance / 1000).toFixed(1) + " km"
+          }`
         : '';
       
       return `
         <a class="location-card" href="${escapeHtml(location.mapUrl)}" target="_blank" rel="noreferrer">
           <span>${escapeHtml(location.name)}</span>
           <small>${escapeHtml(location.category)}</small>
-          ${location.address ? `<br><small>${escapeHtml(location.address)}</small>` : ''}
-          ${distanceText}
+          ${distanceText ? `<small>${escapeHtml(distanceText)}</small>` : ''}
           <small>Vezi pe harta</small>
         </a>
       `;
