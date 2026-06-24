@@ -40,6 +40,19 @@ function formatAddress(properties) {
   return address.length > 110 ? `${address.slice(0, 107)}...` : address;
 }
 
+function createGoogleMapsUrl(name, properties, destination) {
+  const queryParts = [
+    name,
+    properties.address_line2,
+    properties.city,
+    properties.state,
+    properties.country,
+    destination
+  ].filter(Boolean);
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryParts.join(", "))}`;
+}
+
 async function fetchJson(url) {
   const response = await fetch(url);
 
@@ -217,7 +230,7 @@ module.exports = async function handler(req, res) {
           distance: Math.round(properties.distance || 0),
           lat: properties.lat,
           lon: properties.lon,
-          mapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${properties.lat},${properties.lon}`)}`
+          mapUrl: createGoogleMapsUrl(name, properties, center.formatted || destination)
         };
       })
       .filter(Boolean)
