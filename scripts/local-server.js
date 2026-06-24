@@ -35,6 +35,7 @@ loadEnvFile();
 const generateTrip = require("../api/generate-trip");
 const geoapify = require("../api/geoapify");
 const pexels = require("../api/pexels");
+const validateDestination = require("../api/validate-destination");
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -116,6 +117,15 @@ async function handlePexels(request, response) {
   }
 }
 
+async function handleValidateDestination(request, response) {
+  try {
+    await validateDestination(request, createVercelResponse(response));
+  } catch (error) {
+    response.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    response.end(JSON.stringify({ error: error.message }));
+  }
+}
+
 function sendStatic(request, response) {
   const requestUrl = new URL(request.url, `http://${request.headers.host}`);
   const requestedPath = requestUrl.pathname === "/" ? "/index.html" : requestUrl.pathname;
@@ -154,6 +164,11 @@ const server = http.createServer((request, response) => {
 
   if (request.url.startsWith("/api/pexels")) {
     handlePexels(request, response);
+    return;
+  }
+
+  if (request.url.startsWith("/api/validate-destination")) {
+    handleValidateDestination(request, response);
     return;
   }
 

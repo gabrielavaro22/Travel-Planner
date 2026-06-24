@@ -28,6 +28,10 @@
     {
       "src": "api/pexels.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/validate-destination.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -42,6 +46,10 @@
     {
       "src": "/api/pexels",
       "dest": "/api/pexels.js"
+    },
+    {
+      "src": "/api/validate-destination",
+      "dest": "/api/validate-destination.js"
     },
     {
       "src": "/styles.css",

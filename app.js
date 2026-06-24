@@ -76,6 +76,31 @@ function getDestinationData(destination) {
   return Object.values(destinations).find((entry) => normalizedDestination.includes(normalizeText(entry.name)));
 }
 
+async function isValidDestination(destination) {
+  const trimmedDestination = String(destination || "").trim();
+
+  if (!trimmedDestination) {
+    return false;
+  }
+
+  if (getDestinationData(trimmedDestination)) {
+    return true;
+  }
+
+  try {
+    const response = await fetch(`/api/validate-destination?destination=${encodeURIComponent(trimmedDestination)}`);
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    return data.valid === true;
+  } catch {
+    return false;
+  }
+}
+
 function pickItems(items, count, offset = 0) {
   if (!items.length) return [];
 
@@ -112,16 +137,16 @@ async function getRecommendedLocations(payload, destinationData) {
   try {
     // Call our Geoapify endpoint to get recommended locations
     const response = await fetch(`/api/geoapify?destination=${encodeURIComponent(payload.destination)}`);
-    
+
     if (!response.ok) {
       // Fallback to local data if Geoapify fails
       console.warn('Geoapify API failed, falling back to local data');
       return getRecommendedLocationsFallback(payload, destinationData);
     }
-    
+
     const geoapifyData = await response.json();
     const geoapifyLocations = Array.isArray(geoapifyData) ? geoapifyData : geoapifyData.places || [];
-    
+
     // Transform Geoapify data to match expected format
     return geoapifyLocations.map(location => ({
       name: location.name,
@@ -305,17 +330,17 @@ function generateFlexibilitySuggestions(payload, destinationData) {
   const budgetValue = payload.budget?.match(/(\d+(?:\s*\d+)*(?:\.\d+)?)/i)?.[1].replace(/\s/g, '') || '500';
   const currencyMatch = payload.budget?.match(/(\d+(?:\s*\d+)*(?:\.\d+)?)\s*(EUR|RON|USD|GBP)/i);
   const currency = currencyMatch ? currencyMatch[2].toUpperCase() : 'EUR';
-  
+
   // Parse preferences for more specific suggestions
   const preferences = payload.preferences || [];
   const vacationType = payload.vacationType || '';
-  
+
   // Helper function to get destination-specific places
   function getDestinationSpecific(placeType, genericName) {
     if (destinationData && destinationData.locations && destinationData.locations.length > 0) {
       // Try to find matching locations from our data
-      const matching = destinationData.locations.filter(loc => 
-        loc.category.toLowerCase().includes(placeType.toLowerCase()) || 
+      const matching = destinationData.locations.filter(loc =>
+        loc.category.toLowerCase().includes(placeType.toLowerCase()) ||
         loc.name.toLowerCase().includes(placeType.toLowerCase())
       );
       if (matching.length > 0) {
@@ -325,7 +350,7 @@ function generateFlexibilitySuggestions(payload, destinationData) {
     // Return generic but destination-aware suggestions
     return [`un ${placeType} local în ${destinationName}`];
   }
-  
+
   // Rainy day suggestions - indoor activities
   const rainyDayBackup = [
     ...getDestinationSpecific('muzeu', 'muzeu'),
@@ -337,7 +362,7 @@ function generateFlexibilitySuggestions(payload, destinationData) {
     ...getDestinationSpecific('cinema', 'cinema'),
     ...getDestinationSpecific('escape room', 'escape room')
   ].slice(0, 3);
-  
+
   // Low energy suggestions - relaxing activities
   const lowEnergyOptions = [
     `cafenea liniștită în zona centrală a ${destinationName}`,
@@ -348,7 +373,7 @@ function generateFlexibilitySuggestions(payload, destinationData) {
     `activitate scătoare de energie: lectură în bibliotecă locală`,
     `seară liberă la hotel cu film sau joc de societate`
   ].slice(0, 3);
-  
+
   // Extra time suggestions - short activities
   const extraTimeSuggestions = [
     `explorare cartier istoric în ${destinationName}`,
@@ -360,7 +385,7 @@ function generateFlexibilitySuggestions(payload, destinationData) {
     `loc pentru foto cu panoramă urbană`,
     `experiție locală rapidă: degustare vin/paștele locale`
   ].slice(0, 3);
-  
+
   // Backup pool - diverse alternatives for real problems
   const backupActivityPool = [
     // Atracție închisă
@@ -384,7 +409,7 @@ function generateFlexibilitySuggestions(payload, destinationData) {
     // Schimbare de plan de ultima oră
     `plan B de rezervă: activitate recomandată de personalul hotelului/hostelului`
   ];
-  
+
   return {
     rainyDayBackup: rainyDayBackup.join(', '),
     lowEnergyOptions: lowEnergyOptions.join(', '),
@@ -540,7 +565,7 @@ const recommendations = (plan.recommendedLocations || [])
               : (location.distance / 1000).toFixed(1) + " km"
           }`
         : '';
-      
+
       return `
         <a class="location-card" href="${escapeHtml(location.mapUrl)}" target="_blank" rel="noreferrer">
           <span>${escapeHtml(location.name)}</span>
@@ -612,7 +637,7 @@ const budgetSidebar = document.getElementById("budget-sidebar");
     const currency = budgetMatch ? budgetMatch[2].toUpperCase() : '';
     const days = plan.days?.length || 1;
     const perDay = budgetValue ? Math.round(parseFloat(budgetValue) / days) : 0;
-    
+
     budgetSidebar.innerHTML = `
       <div class="section-heading compact">
         <p class="eyebrow">Buget</p>
@@ -1164,6 +1189,16 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  // Validate that the destination is a real place
+  setMessage("Verific destinatia...", "success");
+  const isValid = await isValidDestination(payload.destination);
+
+  if (!isValid) {
+    setMessage("Locatia introdusa nu este recunoscuta. Va rugam sa introduceti o destinatie reala.", "error");
+    return;
+  }
+
+  // Clear validation message and proceed with trip generation
   setMessage("Generez itinerariul...", "success");
   generateButton.disabled = true;
   generateButton.textContent = "Se genereaza...";
